@@ -42,7 +42,7 @@ if (length(.find.package("rJava",verbose=FALSE,quiet=TRUE))>0 &&
     .JavaInit(list(classPath=classpath))
   }, pos=.iplots.env)
 
-  
+
   assign(".jnew", function(...) do.call(".jjnew",lapply(list(...), function(x) if (!is.null(x) && inherits(x,"jobjRef")) x$jobj else x)), pos=.iplots.env)
   assign(".jjnew", function(class, ...) {
     #cat(paste(".jnew(",class,",...)\n"))
@@ -110,7 +110,7 @@ if (length(.find.package("rJava",verbose=FALSE,quiet=TRUE))>0 &&
   if (dlp!="") # for Mac OS X we need to remove X11 from lib-path
     Sys.putenv("DYLD_LIBRARY_PATH"=gsub("/usr/X11R6/lib","",dlp))
   cp<-paste(lib,pkg,"cont","iplots.jar",sep=.Platform$file.sep)
-  
+
   .jinit(cp)
   if ((exists(".iplots") && length(.iplots)>0))
     warning("iPlots currently don't support saving of sessions. Data belonging to iPlots from your previous session will be discarded.")
@@ -142,7 +142,7 @@ iset.set <- function(which = iset.next()) {
 
   ci<-.jcall(.iplots.fw,"I","curSetId")+1
   .iset.save(ci)
-  
+
   if (is.character(which)) {
     nso<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","selectSet",which)
     if (is.null(nso))
@@ -382,6 +382,21 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
   a
 }
 
+.iplot.iPCP  <- function (vars, ...) {
+  vv<-vector()
+  for (v in vars) {
+    if (inherits(v, "ivar"))
+      vv<-c(vv,v$vid)
+    else
+      vv<-c(vv,v)
+  }
+  if (length(vv)<2)
+    stop("At least 2 valid variables are necessary for a pcp plot")
+  a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/PCPCanvas;","newPCP",as.integer(vv)))
+  if (length(list(...))>0) iplot.opt(...,plot=a)
+  a
+}
+
 #==========================================================================
 # user-level plot calls
 #==========================================================================
@@ -391,15 +406,15 @@ iplot <- function(x,y=NULL,xlab=NULL,ylab=NULL,...) {
     lx <- if (inherits(x,"ivar")) .jcall(x$obj,"I","size") else length(x)
     ly <- if (inherits(y,"ivar")) .jcall(y$obj,"I","size") else length(y)
   } else {
-    xlabel <- if (!missing(x)) 
+    xlabel <- if (!missing(x))
         deparse(substitute(x))
-    ylabel <- if (!missing(y)) 
+    ylabel <- if (!missing(y))
         deparse(substitute(y))
     xy <- xy.coords(x, y, xlabel, ylabel, log="")
-    xlab <- if (is.null(xlab)) 
+    xlab <- if (is.null(xlab))
         xy$xlab
     else xlab
-    ylab <- if (is.null(ylab)) 
+    ylab <- if (is.null(ylab))
         xy$ylab
     else ylab
     nx<-xlab
@@ -456,6 +471,25 @@ ihammock <- function(vars, ...) {
   .iplot.iHammock(vv, ...)
 }
 
+ipcp <- function(vars, ...) {
+  vv<-vector()
+  i <- 1
+  for (var in vars) {
+    if (length(var) > 1) {
+      if (is.factor(var))
+          var <- as.integer(var)
+      varname <- names(vars)[[i]]
+      if (!is.null(varname)) 
+	      var <- ivar.new(varname, var)
+	  else 
+	      var <- ivar.new(.ivar.valid.name("pcp"), var)
+      if (inherits(var,"ivar"))  vv <- c(vv,var$vid)
+    }
+    i <- i+1
+  }
+  .iplot.iPCP(vv, ...)
+}
+
 iplot.opt <- function(..., plot=iplot.cur()) {
   if (is.numeric(plot)) plot<-.iplots[[as.integer(plot)]]
   if (length(list(...))==0)
@@ -488,7 +522,7 @@ iplot.opt <- function(..., plot=iplot.cur()) {
     }
     .jcall(plot$obj,"V","setHistParam",anchor,bwidth)
   }
-      
+
   # dirty temporary fix
   .jcall(plot$obj,"V","forcedFlush")
   invisible()
@@ -607,7 +641,7 @@ iobj.list <- function(plot = .iplot.current) {
       class(a)<-"iobj"
       l[[j]]<-a
     }
-  } 
+  }
   l
 }
 
@@ -761,8 +795,8 @@ iobj.set <- function(which) {
     if (is.na(fill))
       .jcall(obj$obj,"V","setFillColor",NULL)
     else
-      .jcall(obj$obj,"V","setFillColor",.jnew("org/rosuda/ibase/toolkit/PlotColor",fill))      
-  
+      .jcall(obj$obj,"V","setFillColor",.jnew("org/rosuda/ibase/toolkit/PlotColor",fill))
+
   .jcall(obj$obj,"V","update")
   # dirty temporary fix
   .jcall(.iplot.current$obj,"V","forcedFlush");
