@@ -8,18 +8,27 @@ cp -r ../iplots /tmp
 
 rm -rf /tmp/iplots.java
 mkdir /tmp/iplots.java
-echo "Using compiled jar ..."
-if [ -e /Work/builds ]; then
-   BUILDIR=/Work/builds
-fi
-if [ -e /Builds ]; then
-   BUILDIR=/Builds
-fi
-echo "Build directory: ${BUILDIR}/Klimt.app"
-if [ ! -e ${BUILDIR}/Klimt.app/Contents/Resources/Java/Klimt.jar ]; then
-   echo "Sorry, but currently I don't know how to re-build Java sources."
-   echo "Please compile the framework with Project Builder (Klimt.app in /Work/builds)"
-   exit 1
+
+JARFILE=$1
+if [ -z $JARFILE ]; then JARFILE="Klimt.jar"; fi
+if [ -e $JARFILE ]; then 
+    JARFILE=$1
+    echo "Using custom JAR file $JARFILE"
+else
+    echo "Using compiled jar ..."
+    if [ -e /Work/builds ]; then
+	BUILDIR=/Work/builds
+    fi
+    if [ -e /Builds ]; then
+	BUILDIR=/Builds
+    fi
+    echo "Build directory: ${BUILDIR}/Klimt.app"
+    if [ ! -e ${BUILDIR}/Klimt.app/Contents/Resources/Java/Klimt.jar ]; then
+	echo "Sorry, but currently I don't know how to re-build Java sources."
+	echo "Please compile the framework with Project Builder (Klimt.app in /Work/builds)"
+	exit 1
+    fi
+    JARFILE=${BUILDIR}/Klimt.app/Contents/Resources/Java/Klimt.jar
 fi
 
 #echo "Copying sources ..."
@@ -34,7 +43,7 @@ fi
 cp ../../../org/rosuda/iplots/iPlots.jpg /tmp/iplots.java/iPlots.jpg
 cp ../../../org/rosuda/ibase/Common.java /tmp/iplots.java/Common.java
 cd /tmp/iplots.java
-jar fx ${BUILDIR}/Klimt.app/Contents/Resources/Java/Klimt.jar
+jar fx ${JARFILE}
 mv iPlots.jpg splash.jpg
 
 rm /tmp/iplots/mkdist
@@ -71,9 +80,9 @@ cp iplots.jar /tmp/iplots/inst/cont
 cd /tmp/iplots
 echo "Removing CVS stuff ..."
 rm -rf `find . -name CVS`
-echo "Updating INDEX ..."
+#echo "Updating INDEX ..."
 cd ..
-R CMD Rdindex iplots > iplots/INDEX
+#R CMD Rdindex iplots > iplots/INDEX
 echo "Updating version ..."
 cd iplots
 cat DESCRIPTION| sed "s/Version:.*/Version: ${VER}/" > d
