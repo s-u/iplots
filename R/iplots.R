@@ -278,10 +278,69 @@ iobj.rm <- function(obj) {
   rm(obj)
 }
 
-iobj.opt <- function(o=iobj.cur(),...,col=NULL, fill=NULL, layer=NULL, reg=NULL, visible=NULL) {
+.iobj.opt.PlotText <- function(o,x=NULL,y=NULL,txt=NULL,ax=NULL,ay=NULL) {
+  if (!is.null(x) || !is.null(y) || !is.null(ax) || !is.null(ay)) {
+    if (is.null(x)) x<-.Java(o$obj,"getX")
+    if (is.null(y)) y<-.Java(o$obj,"getY")
+    if (length(x)==1) x<-c(x,x)
+    if (length(y)==1) y<-c(y,y)
+    if (is.null(ax) && is.null(ay))
+      .Java(o$obj,"set",as.real(x),as.real(y))
+    else {
+      if (is.null(ax)) ax<-.Java(o$obj,"getAX")
+      if (is.null(ay)) ay<-.Java(o$obj,"getAY")
+      if (length(ax)==1) ax<-c(ax,ax)
+      if (length(ay)==1) ay<-c(ay,ay)
+      .Java(o$obj,"set",as.real(x),as.real(y),as.real(ax),as.real(ay))
+    }
+  } else {
+    if (!is.null(txt)) {
+      if (length(txt)==1) txt<-c(txt,txt)
+      .Java(o$obj,"set",as.character(txt))
+    }
+  }
+}
+
+itext <- function(x, y=NULL, labels=seq(along=x), ax=NULL, ay=NULL) {
+  if (!inherits(.iplot.current,"iplot")) {
+    stop("There is no current plot")
+  } else {
+    pt<-iobj.new(.iplot.current,"PlotText")
+    c<-xy.coords(x,y,recycle=TRUE)
+    iobj.opt(pt,x=c$x,y=c$y,ax=ax,ay=ay,txt=labels)
+  }
+}
+
+.iobj.opt.get.PlotText <- function(o) {
+  return(list(x=.Java(o$obj,"getX"),y=.Java(o$obj,"getY"),
+              ax=.Java(o$obj,"getAX"),ay=.Java(o$obj,"getAY"),
+              txt=.Java(o$obj,"getText")))
+}
+
+iobj.opt <- function(o=iobj.cur(),...) {
+  if (length(list(...))==0)
+    .iobj.opt.get(o)
+  else
+    .iobj.opt(o,...)
+}
+
+.iobj.opt.get <- function(o) {
+  if (!is.null(o)) {
+    cl<-o$obj[[2]]
+    if (cl=="PlotText")
+      .iobj.opt.get.PlotText(o)
+  }
+}
+
+.iobj.opt <- function(o=iobj.cur(),...,col=NULL, fill=NULL, layer=NULL, reg=NULL, visible=NULL) {
   if (is.numeric(o)) o<-iobj.get(o)
   if (!is.null(layer)) .Java(o$obj,"setLayer",as.integer(layer))
-  if (length(list(...))>0) .Java(o$obj,"set",...)
+  if (length(list(...))>0) {
+    if (o$obj[[2]]=="PlotText")
+      .iobj.opt.PlotText(o,...)
+    else
+      .Java(o$obj,"set",...)
+  }
   if (!is.null(col)|| !is.null(fill)) .iobj.color(o,col,fill)
   if (!is.null(reg)) .iabline.set(o,reg=reg)
   if (!is.null(visible)) .Java(o$obj,"setVisible",visible);
