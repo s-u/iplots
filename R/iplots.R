@@ -119,11 +119,13 @@ iplot.par <- function(xlim=NULL, ylim=NULL, col=NULL, plot=.iplot.current) {
   if (!is.null(xlim)) .iplot.setXaxis(plot$obj,xlim[1],xlim[2])
   if (!is.null(ylim)) .iplot.setYaxis(plot$obj,ylim[1],ylim[2])
   if (!is.null(col)) iset.brush(col)
-  if (!(is.null(xlim) && is.null(ulim))) {
+  if (!(is.null(xlim) && is.null(ylim))) {
     if (plot$obj[[2]]=="ScatterCanvas") .Java(plot$obj,"updatePoints")
     .Java(plot$obj,"setUpdateRoot",as.integer(0))
     .Java(plot$obj,"repaint")
   }
+  # dirty temporary fix
+  .Java(plot$obj,"forcedFlush");
 }
 
 iplot.getPar <- function(plot=.iplot.current) {
@@ -172,6 +174,8 @@ iset.brush <- function(col) {
   if (is.numeric(col) && !is.integer(col)) col<-as.integer(col)
   if (is.factor(col)) col<-as.integer(as.integer(col)+1)
   .Java(.iplots.fw,"setSecMark",col);
+  # dirty temporary fix
+  .Java(.iplot.current$obj,"forcedFlush");
 }
 
 iset.updateVars <- function() { .Java(.iplots.fw,"updateVars"); }
@@ -183,11 +187,15 @@ iset.var <- function(vid) {
 
 # iobj API
 
+# internal function - creates a new object of the Java-class <type>
 iobj.new <- function(plot, type) {
   pm<-.Java(plot$obj,"getPlotManager")
   a<-list(obj=.JavaConstructor(type,pm),pm=pm,plot=plot)
   class(a)<-"iobj"
   plot$curobj<-a
+  # dirty temporary fix
+  .Java(plot$obj,"forcedFlush");
+  a
 }
 
 iobj.list <- function(plot = .iplot.current) {
@@ -211,6 +219,18 @@ iobj.get <- function(pos, plot = .iplot.current) {
   a
 }
 
+iobj.cur <- function(plot = .iplot.current) {
+  pm<-.Java(plot$obj,"getPlotManager")
+  oo<-.Java(pm,"getCurrentObject");
+  if (is.null(oo)) {
+    NULL
+  } else {
+    a<-list(obj=oo,pm=pm,plot=plot)
+    class(a)<-"iobj"
+    a
+  }
+}
+
 .iplot.get.by.pm <-function (which) { # get plot from the list by pm entry
   for (i in .iplots)
     if (i$pm == which) return(i)
@@ -225,21 +245,22 @@ iobj.rm <- function(obj) {
   rm(obj)
 }
 
-iobj.set <- function(o,...) {
+iobj.set <- function(o=iobj.cur(),...,layer=NULL) {
   if (is.numeric(o)) o<-iobj.get(o)
-  .Java(o$obj,"set",...)
+  if (!is.null(layer)) .Java(o$obj,"setLayer",as.integer(layer))
+  if (length(list(...))>0) .Java(o$obj,"set",...)
   .Java(o$obj,"update")
+  # dirty temporary fix
+  .Java(.iplot.current$obj,"forcedFlush");
 }
 
-iobj.color <- function(obj, col=NULL, fill=NULL) {
+iobj.color <- function(obj=iobj.cur(), col=NULL, fill=NULL) {
   if (is.numeric(obj)) obj<-iobj.get(as.integer(obj))
   if (!is.null(col)) .Java(obj$obj,"setDrawColor",.JavaConstructor("PlotColor",col))
   if (!is.null(fill)) .Java(obj$obj,"setFillColor",.JavaConstructor("PlotColor",fill))
   .Java(obj$obj,"update")
-}
-
-iobj.cur <- function(plot=.iplot.current) {
-  plot$curobj
+  # dirty temporary fix
+  .Java(.iplot.current$obj,"forcedFlush");
 }
 
 print.iobj <- function(o) {
