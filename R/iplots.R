@@ -1,19 +1,26 @@
 .packageName <- "iplots"
 
+#==========================================================================
 # iplots - interactive plots for R
-# Package version: 0.1-16
+# Package version: 0.1-17
 #
 # $Id$
 # (C)Copyright 2003 Simon Urbanek
 #
+#==========================================================================
 # -- global variables:
 # .iplots.fw     - framework object
 # .iplots        - list of iplot objects
 # .iplot.curid   - current plot ID
 # .iplot.current - .iplots[[.iplot.curid]]
-
 # .iplots.env is the environment of this package
+#==========================================================================
+
 assign(".iplots.env",environment())
+
+#==========================================================================
+# R-level initialization (SJava vs. rJava detection etc.)
+#==========================================================================
 
 # we want to be compatible with both SJava and rJava.
 # first we look if rJava is present and SJava not already loaded,
@@ -76,19 +83,25 @@ if (length(.find.package("rJava",verbose=FALSE,quiet=TRUE))>0 &&
   assign(".jbackend","SJava",pos=.iplots.env)
 }
 
-# used objects
+#==========================================================================
+# used objects:
+#==========================================================================
 #
 # ivar
-# vid (int), name (char), obj (jobjRef [SVar])
+#   vid (int), name (char), obj (jobjRef [SVar])
 #
 # iplot
-# id (int), iname (char), obj (jobjRef)
+#   id (int), iname (char), obj (jobjRef)
 #
 # from rJava:
 #
 # jobjRef
-# jobj (int), jclass (char)
+#   jobj (int), jclass (char)
 #
+
+#==========================================================================
+# initialization
+#==========================================================================
 
 # library initialization: Add "<iplots>/cont/iplots.jar" to classpath,
 # initialize Java and create an instance on the Framework "glue" class
@@ -97,12 +110,13 @@ if (length(.find.package("rJava",verbose=FALSE,quiet=TRUE))>0 &&
   if (dlp!="") # for Mac OS X we need to remove X11 from lib-path
     Sys.putenv("DYLD_LIBRARY_PATH"=gsub("/usr/X11R6/lib","",dlp))
   cp<-paste(lib,pkg,"cont","iplots.jar",sep=.Platform$file.sep)
-  #  .JavaInit(list(classPath=c(cp)))
+  
   .jinit(cp)
   if ((exists(".iplots") && length(.iplots)>0))
     warning("iPlots currently don't support saving of sessions. Data belonging to iPlots from your previous session will be discarded.")
   .iplots.fw<<-.jnew("org/rosuda/iplots/Framework")
-  # we need to reset everything for sanity reasons
+
+   # we need to reset everything for sanity reasons
   .iset.selection<<-vector()
   .isets<<-list()
   .isets[[1]]<<-list()
@@ -117,7 +131,9 @@ if (length(.find.package("rJava",verbose=FALSE,quiet=TRUE))>0 &&
   if (length(grep(class, o$jclass))>0) TRUE else FALSE
 }
 
+#==========================================================================
 # iSet API
+#==========================================================================
 
 # select a current dataset
 iset.set <- function(which = iset.next()) {
@@ -194,12 +210,23 @@ iset.new <- function(name=NULL) {
   ci
 }
 
+#==========================================================================
+# variables handling (iVar)
+#==========================================================================
+
+.ivar.check.length <- function(cont) {
+  dsl <- .jcall(.iplots.fw,"I","getCurVarSetLength")
+  if (dsl>0 && length(cont)!=dsl)
+    cat("iSet and data length differ. Please observe the dialog box (it may be hidden by the R window).\n");
+}
+
 # create a new variable (undocumented!)
 ivar.new <- function (name,cont) {
   if (!is.character(name) || length(name)>1)
     stop("variable name must be a single string")
   if(is.factor(cont) || is.character(cont)) {
     cont<-as.factor(cont)
+    .ivar.check.length(cont)
     id<-.jcall(.iplots.fw,"I","newVar",name,as.integer(cont),as.character(levels(cont)))
     if (id==-2) stop("Operation canceled by user.")
     if (id==-3) {
@@ -209,13 +236,16 @@ ivar.new <- function (name,cont) {
         stop("Unable to create an iVariable");
     }
     if (id>=0) {
-      .jcall(.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVar;","getVar",id),"V","categorize",TRUE)
-      v<-list(vid=id,name=name,obj=.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVar;","getVar",id))
+      vobj<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVar;","getVar",id)
+      .jcall(.jcast(vobj,"org/rosuda/ibase/SVarFixFact"),"V","createMissingsCat")
+      .jcall(vobj,"V","categorize",TRUE)
+      v<-list(vid=id,name=name,obj=vobj)
       class(v)<-"ivar"
       return(v)
     }
     return (NULL)
   }
+  .ivar.check.length(cont)
   id<-.jcall(.iplots.fw,"I","newVar",name,cont)
   if (id==-2) stop("Operation canceled by user.")
   if (id==-3) {
@@ -232,15 +262,27 @@ ivar.new <- function (name,cont) {
   return(NULL);
 }
 
+ivar.data <- function(var) {
+  if (!inherits(var,"ivar"))
+    stop("parameter is not an iVariable.")
+  vid<-as.integer(var$id)
+  if(.jcall(.iplots.fw,"I","varIsNum",vid)!=0) .jcall(.iplots.fw,"[D","getDoubleContent",vid) else as.factor(.jcall(.iplots.fw,"[S","getStringContent",vid))
+}
+
+# re-format the variable name to prevent collidsion with existing variables
+.ivar.valid.name <- function(name) {
+  as.character(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(name)))
+}
+
 # update contents of an existing variable (undocumented!)
 #ivar.update <- function (var,cont) {
 #  .Java(.iplots.fw,"replaceVar",vid,cont); .Java(.iplots.fw,"updateVars");
 #}
 
 
-#============================
+#==========================================================================
 # iplot management functions
-#============================
+#==========================================================================
 
 iplot.set <- function (which=iplot.next()) {
   a<-try(.iplots[[which<-as.integer(which)]])
@@ -340,14 +382,9 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
   a
 }
 
-ivar.data <- function(var) {
-  if (!inherits(var,"ivar"))
-    stop("parameter is not an iVariable.")
-  vid<-as.integer(var$id)
-  if(.jcall(.iplots.fw,"I","varIsNum",vid)!=0) .jcall(.iplots.fw,"[D","getDoubleContent",vid) else as.factor(.jcall(.iplots.fw,"[S","getStringContent",vid))
-}
-
+#==========================================================================
 # user-level plot calls
+#==========================================================================
 
 iplot <- function(x,y=NULL,...) {
   lx<-length(x)
@@ -367,9 +404,10 @@ iplot <- function(x,y=NULL,...) {
   if (lx!=ly)
     stop("Incompatible vector lengths. Both vectors x and y must be of the same length.")
 
-  #print(.jstrVal(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(nx))))
-  if ((is.vector(x) || is.factor(x)) && length(x)>1) x<-ivar.new(as.character(.jstrVal(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(nx)))),x)
-  if ((is.vector(ry) || is.factor(ry)) && length(ry)>1) y<-ivar.new(as.character(.jstrVal(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(ny)))),ry)
+  if ((is.vector(x) || is.factor(x)) && length(x)>1)
+    x<-ivar.new(.ivar.valid.name(nx), x)
+  if ((is.vector(ry) || is.factor(ry)) && length(ry)>1)
+    y<-ivar.new(.ivar.valid.name(ny),ry)
   if (is.null(x)) stop("Invalid X variable")
   if (is.null(y)) stop("Invalid Y variable")
   .iplot.iPlot(x,y,...)
@@ -380,8 +418,9 @@ ibar <- function(var, ...) {
   if (inherits(var,"ivar")) len<-.jcall(var$obj,"I","size")
   if (len<2)
     stop("ibar requires at least two data points")
-   if ((is.vector(var) || is.factor(var)) && length(var)>1) var<-ivar.new(.jstrVal(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(deparse(substitute(var))))),as.factor(var));
-   .iplot.iBar(var, ...)
+   if ((is.vector(var) || is.factor(var)) && length(var)>1)
+     var<-ivar.new(.ivar.valid.name(deparse(substitute(var))), as.factor(var));
+  .iplot.iBar(var, ...)
 }
 
 ihist <- function(var, ...) {
@@ -389,8 +428,9 @@ ihist <- function(var, ...) {
   if (inherits(var,"ivar")) len<-.jcall(var$obj,"I","size")
   if (len<2)
     stop("ihist requires at least two data points")
-   if ((is.vector(var) || is.factor(var)) && length(var)>1) var<-ivar.new(.jstrVal(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(deparse(substitute(var))))),var);
-   .iplot.iHist(var, ...)
+   if ((is.vector(var) || is.factor(var)) && length(var)>1)
+     var<-ivar.new(.ivar.valid.name(deparse(substitute(var))), var);
+  .iplot.iHist(var, ...)
 }
 
 ihammock <- function(vars, ...) {
@@ -398,8 +438,7 @@ ihammock <- function(vars, ...) {
   for (var in vars) {
     var<-as.factor(var)
     if (length(var) > 1) {
-      var <- ivar.new(.jcall(.iplots.fw, "S", "getNewTmpVar", 
-                             "hammock."), var)
+      var <- ivar.new(.ivar.valid.name("hammock."), var)
       if (inherits(var,"ivar"))  vv <- c(vv,var$vid)
     }
   }
@@ -485,7 +524,9 @@ iplot.resetYaxis <- function(ipl=lastPlot) { .jcall(.jcall(ipl,"Lorg/rosuda/ibas
 iplot.resetAxes <- function(ipl=lastPlot) { resetXaxis(ipl); resetYaxis(ipl); }
 iset.df <- function(df) { ndf<-list(); for(i in names(df)) { ndf[[i]]<-ivar.new(i,df[[i]]) }; as.data.frame(ndf) }
 
+#==========================================================================
 # selection/highlighting API
+#==========================================================================
 
 iset.select <- function(what, mode="replace", mark=TRUE) {
   m<-.jcall(.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","getCurrentSet"),"Lorg/rosuda/ibase/SMarker;","getMarker")
@@ -509,11 +550,14 @@ iset.selected <- function() {
 iset.selectAll <- function() { .jcall(.jcall(.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","getCurrentSet"),"Lorg/rosuda/ibase/SMarker;","getMarker"),"V","selectAll",as.integer(1)); .jcall(.iplots.fw,"V","updateMarker"); }
 iset.selectNone <- function() { .jcall(.jcall(.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","getCurrentSet"),"Lorg/rosuda/ibase/SMarker;","getMarker"),"V","selectNone"); .jcall(.iplots.fw,"V","updateMarker"); }
 
+
+#==========================================================================
 # brushing API
+#==========================================================================
 
 # in paper: iset.color(color, what=iset.selected())
-iset.col <- function(col) { iset.brush(col) }
-iset.brush <- function(col) {
+iset.col <- function(col=NULL) { iset.brush(col) }
+iset.brush <- function(col=NULL) {
   if (is.null(col) || is.na(col)) col<-as.integer(c(0,0))
   if (is.numeric(col) && !is.integer(col)) col<-as.integer(col)
   if (is.factor(col)) col<-as.integer(as.integer(col)+1)
@@ -527,7 +571,9 @@ iset.brush <- function(col) {
 
 iset.updateVars <- function() { .jcall(.iplots.fw,"V","updateVars"); }
 
+#==========================================================================
 # iobj API
+#==========================================================================
 
 # internal function - creates a new object of the Java-class <type>
 .iobj.new <- function(plot, type) {
@@ -605,11 +651,12 @@ iobj.rm <- function(which=iobj.cur()) {
   }
 }
 
-itext <- function(x, y=NULL, labels=seq(along=x), ax=NULL, ay=NULL, ...) {
-  if (!inherits(.iplot.current,"iplot")) {
+itext <- function(x, y=NULL, labels=seq(along=x), ax=NULL, ay=NULL, ..., plot=iplot.cur()) {
+  if (is.numeric(plot)) plot<-.iplots[[plot]]
+  if (!inherits(plot,"iplot")) {
     stop("There is no current plot")
   } else {
-    pt<-.iobj.new(.iplot.current,"PlotText")
+    pt<-.iobj.new(plot,"PlotText")
     c<-xy.coords(x,y,recycle=TRUE)
     iobj.opt(pt,x=c$x,y=c$y,ax=ax,ay=ay,txt=labels)
     if (length(list(...))>0)
@@ -704,14 +751,15 @@ print.iobj <- function(x, ...) {
   cat(.jstrVal(x$obj),"\n")
 }
 
-ilines <- function(x,y=NULL,col=NULL,fill=NULL,visible=NULL) {
-  if (!inherits(.iplot.current,"iplot")) {
+ilines <- function(x,y=NULL,col=NULL,fill=NULL,visible=NULL,plot=iplot.cur()) {
+  if (is.numeric(plot)) plot<-.iplots[[plot]]
+  if (!inherits(plot,"iplot")) {
     stop("There is no current plot")
   } else {
     .co<-xy.coords(x,y)
     x<-.co$x
     y<-.co$y
-    pp<-.iobj.new(.iplot.current,"PlotPolygon")
+    pp<-.iobj.new(plot,"PlotPolygon")
     .jcall(pp$obj,"V","set",as.numeric(x),as.numeric(y))
     if (!is.null(col) || !is.null(fill))
       .iobj.color(pp,col,fill) # includes "update"
@@ -742,21 +790,22 @@ ilines <- function(x,y=NULL,col=NULL,fill=NULL,visible=NULL) {
   list(a=a,b=b)
 }
 
-iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ...) {
+iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ..., plot=iplot.cur()) {
+  if (is.numeric(plot)) plot<-.iplots[[plot]]
   l<-.iabline.AB(a,b,reg,coef)
   a<-l$a
   b<-l$b
-  if (is.null(.iplot.current) || !inherits(.iplot.current,"iplot")) {
+  if (is.null(plot) || !inherits(plot,"iplot")) {
     stop("There is no current plot")
   } else {
-    ax<-.jcall(.iplot.current$obj,"Lorg/rosuda/ibase/toolkit/Axis;","getXAxis")
+    ax<-.jcall(plot$obj,"Lorg/rosuda/ibase/toolkit/Axis;","getXAxis")
     if (is.null(ax)) {
       stop("The plot has no X axis")
     } else {
       r<-.jcall(ax,"[D","getValueRange",evalArray=TRUE)
       mi<-min(r)
       mx<-max(r)
-      ilines(c(mi,mx),c(a+b*mi,a+b*mx),...)
+      ilines(c(mi,mx),c(a+b*mi,a+b*mx),...,plot=plot)
     }
   }
 }
@@ -802,7 +851,9 @@ iset.sel.changed <- function (iset=iset.cur()) {
   .jcall(.iplots.fw,"V","setDebugLevel",as.integer(level))
 }
 
+#==========================================================================
 #------ DEBUG/TEST code
+#==========================================================================
 
 .db <- function() {
   iplot(rnorm(200),rnorm(200))
