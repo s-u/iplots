@@ -367,6 +367,13 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
   a
 }
 
+.iplot.iBox <- function (x, y, ...) {
+  if (is.null(y)) a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/BoxCanvas;","newBoxplot",x$vid))
+  else a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/BoxCanvas;","newBoxplot",x$vid,y$vid))
+  if (length(list(...))>0) iplot.opt(...,plot=a)
+  a
+}
+
 .iplot.iHammock <- function (vars, ...) {
   vv<-vector()
   for (v in vars) {
@@ -393,6 +400,21 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
   if (length(vv)<2)
     stop("At least 2 valid variables are necessary for a pcp plot")
   a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/PCPCanvas;","newPCP",as.integer(vv)))
+  if (length(list(...))>0) iplot.opt(...,plot=a)
+  a
+}
+
+.iplot.iMosaic <- function (vars, ...) {
+  vv<-vector()
+  for (v in vars) {
+    if (inherits(v, "ivar"))
+      vv<-c(vv,v$vid)
+    else
+      vv<-c(vv,v)
+  }
+  if (length(vv)<2)
+    stop("At least 2 valid variables are necessary for a mosaic plot")
+  a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/MosaicCanvas;","newMosaic",as.integer(vv)))
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
 }
@@ -459,6 +481,17 @@ ihist <- function(var, ...) {
   .iplot.iHist(var, ...)
 }
 
+ibox <- function(x, y=NULL, ...) {
+  len<-length(x)
+  if (inherits(x,"ivar")) len<-.jcall(x$obj,"I","size")
+  if (len<2)
+    stop("ibox requires at least two data points")
+  x<-ivar.new(.ivar.valid.name(deparse(substitute(x))), as.integer(x));
+  if (is.factor(y))
+  	y <- ivar.new(.ivar.valid.name(deparse(substitute(y))), as.factor(y));
+  .iplot.iBox(x, y, ...)
+}
+
 ihammock <- function(vars, ...) {
   vv<-vector()
   for (var in vars) {
@@ -471,6 +504,22 @@ ihammock <- function(vars, ...) {
   .iplot.iHammock(vv, ...)
 }
 
+
+imosaic <- function(vars, ...) {
+  vv<-vector()
+  i <- 1
+  for (var in vars) {
+    var<-as.factor(var)
+    varname <- names(vars)[[i]]
+    if (length(var) > 1) {
+      var <- ivar.new(.ivar.valid.name(varname), as.factor(var))
+      if (inherits(var,"ivar"))  vv <- c(vv,var$vid)
+    }
+    i <- i+1
+  }
+  .iplot.iMosaic(vv, ...)
+}
+
 ipcp <- function(vars, ...) {
   vv<-vector()
   i <- 1
@@ -479,9 +528,9 @@ ipcp <- function(vars, ...) {
       if (is.factor(var))
           var <- as.integer(var)
       varname <- names(vars)[[i]]
-      if (!is.null(varname)) 
+      if (!is.null(varname))
 	      var <- ivar.new(varname, var)
-	  else 
+	  else
 	      var <- ivar.new(.ivar.valid.name("pcp"), var)
       if (inherits(var,"ivar"))  vv <- c(vv,var$vid)
     }
