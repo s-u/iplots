@@ -2,7 +2,7 @@
 
 #==========================================================================
 # iplots - interactive plots for R
-# Package version: 0.1-18
+# Package version: 0.2-0
 #
 # $Id$
 # (C)Copyright 2003 Simon Urbanek
@@ -15,73 +15,6 @@
 # .iplot.current - .iplots[[.iplot.curid]]
 # .iplots.env is the environment of this package
 #==========================================================================
-
-assign(".iplots.env",environment())
-
-#==========================================================================
-# R-level initialization (SJava vs. rJava detection etc.)
-#==========================================================================
-
-# we want to be compatible with both SJava and rJava.
-# first we look if rJava is present and SJava not already loaded,
-# in such case we use rJava. Otherwise we try to use SJava.
-if (length(.find.package("rJava",verbose=FALSE,quiet=TRUE))>0 &&
-    # the next one is a way to force the use of SJava even if rJava
-    # is installed by loading it in advance (mainly for debugging)
-    (("rJava" %in% .packages()) || !("SJava" %in% .packages()))
-    )
-{
-  library(rJava)
-  assign(".jbackend","rJava",pos=.iplots.env)
-} else {
-  # ok, use SJava. this is a bit tricky, since we need to implement
-  # a kind of rJava emulation by adding functions usually defined by rJava
-  library(SJava)
-
-  assign(".jinit", function(classpath=NULL) {
-    .JavaInit(list(classPath=classpath))
-  }, pos=.iplots.env)
-
-
-  assign(".jnew", function(...) do.call(".jjnew",lapply(list(...), function(x) if (!is.null(x) && inherits(x,"jobjRef")) x$jobj else x)), pos=.iplots.env)
-  assign(".jjnew", function(class, ...) {
-    #cat(paste(".jnew(",class,",...)\n"))
-    a<-.JNew(gsub("/",".",class), ...)
-    if (!is.null(a) && inherits(a,"AnonymousOmegahatReference")) {
-      r<-list(jobj=a, jclass=gsub("\\.","/",a[["className"]]))
-      class(r)<-"jobjRef"
-      return(r)
-    }
-    a
-  }, pos=.iplots.env)
-
-  assign(".jcall", function(...) do.call(".jjcall",lapply(list(...), function(x) if (!is.null(x) && inherits(x,"jobjRef")) x$jobj else x)), pos=.iplots.env)
-  assign(".jstrVal", function(x) {
-    if (is.character(x)) return(x)
-    if (inherits(x,"jobjRef")) return(.jcall(x,"S","toString"))
-    if (inherits(x,"AnonymousOmegahatReference")) return(.Java(x,"toString"))
-    x }, pos=.iplots.env)
-  assign(".jevalArray", function(x) { x }, pos=.iplots.env)
-
-  assign(".jjcall", function(obj, returnSig="V", method, ..., evalArray=TRUE, evalString=TRUE) {
-    #cat(paste(".jcall(",obj,",",method,"...)\n"))
-    if (!evalArray || !evalString)
-      warning("rJava2SJava wrapper doesn't support evalArray=FALSE or evalString=FALSE")
-    a<-.Java(obj, method, ...)
-    if (!is.null(a) && inherits(a,"AnonymousOmegahatReference")) {
-      r<-list(jobj=a, jclass=gsub("\\.","/",a[["className"]]))
-      class(r)<-"jobjRef"
-      return(r)
-    }
-    a
-  }, pos=.iplots.env)
-  # .jcast is a noop since SJava should find the proper method anyway
-  assign(".jcast", function(obj, new.class) obj, pos=.iplots.env)
-  assign(".jnull", function(new.class=NULL) NULL, pos=.iplots.env)
-  # .jcheck is a noop as well
-  assign(".jcheck", function() invisible(), pos=.iplots.env)
-  assign(".jbackend","SJava",pos=.iplots.env)
-}
 
 #==========================================================================
 # used objects:
@@ -106,12 +39,13 @@ if (length(.find.package("rJava",verbose=FALSE,quiet=TRUE))>0 &&
 # library initialization: Add "<iplots>/cont/iplots.jar" to classpath,
 # initialize Java and create an instance on the Framework "glue" class
 .First.lib <- function(lib, pkg) {
+  require(rJava)
   dlp<-Sys.getenv("DYLD_LIBRARY_PATH")
   if (dlp!="") # for Mac OS X we need to remove X11 from lib-path
     Sys.putenv("DYLD_LIBRARY_PATH"=gsub("/usr/X11R6/lib","",dlp))
   cp<-paste(lib,pkg,"cont","iplots.jar",sep=.Platform$file.sep)
 
-  .jinit(cp)
+  .jinit(cp, silent=TRUE)
   if ((exists(".iplots") && length(.iplots)>0))
     warning("iPlots currently don't support saving of sessions. Data belonging to iPlots from your previous session will be discarded.")
   .iplots.fw<<-.jnew("org/rosuda/iplots/Framework")
@@ -942,31 +876,4 @@ iset.sel.changed <- function (iset=iset.cur()) {
 
 .iDebug <- function(level=1) {
   .jcall(.iplots.fw,"V","setDebugLevel",as.integer(level))
-}
-
-#==========================================================================
-#------ DEBUG/TEST code
-#==========================================================================
-
-.db <- function() {
-  iplot(rnorm(200),rnorm(200))
-  ilines(1:200/200*6-3,dnorm(1:200/200*6-3)*4)
-}
-
-# event loop demo from DSC-2003 iPlots paper
-.a <- function() {
-  x<-rnorm(100)
-  y<-rnorm(100)
-  iplot(x, y)
-  iabline(lm(y ~ x), col="black")
-  iabline(0, 0, col="marked", visible=FALSE)
-  while (!is.null(ievent.wait())) {
-    if (iset.sel.changed()) {
-      s <- iset.selected()
-      if (length(s)>0)
-        iobj.opt(reg=lm(y[s] ~ x[s]), visible=TRUE)
-      else
-        iobj.opt(visible=FALSE)
-    }
-  }
 }
