@@ -1,7 +1,7 @@
 .packageName <- "iplots"
 
 # iplots - interactive plots for R
-# Package version: 0.1-15
+# Package version: 0.1-16
 #
 # $Id$
 # (C)Copyright 2003 Simon Urbanek
@@ -415,10 +415,12 @@ iplot.opt <- function(..., plot=iplot.cur()) {
     .iplot.opt(...,plot=plot)
 }
 
-.iplot.opt <- function(xlim=NULL, ylim=NULL, col=NULL, bwidth=NULL, anchor=NULL, breaks=NULL, ..., plot=iplot.cur()) {
+.iplot.opt <- function(xlim=NULL, ylim=NULL, col=NULL, bwidth=NULL, anchor=NULL, breaks=NULL, main=NULL, ..., plot=iplot.cur()) {
   if (is.numeric(plot)) plot<-.iplots[[as.integer(plot)]]
   if (!is.null(xlim)) .iplot.setXaxis(plot$obj,xlim[1],xlim[2])
   if (!is.null(ylim)) .iplot.setYaxis(plot$obj,ylim[1],ylim[2])
+  if (!is.null(main))
+    .jcall(.jcall(plot$obj,"Ljava/awt/Frame;","getFrame"),"V","setTitle",as.character(main))
   if (!is.null(col)) iset.brush(col)
   if (!(is.null(xlim) && is.null(ylim))) {
     if (plot$obj$jclass=="org/rosuda/ibase/plots/ScatterCanvas") .jcall(plot$obj,"V","updatePoints")
