@@ -1,7 +1,7 @@
-packageName <- "iplots"
+.packageName <- "iplots"
 
 # iplots - interactive plots for R
-# Package version: 0.1-13
+# Package version: 0.1-15
 #
 # $Id$
 # (C)Copyright 2003 Simon Urbanek
@@ -25,7 +25,7 @@ if (length(.find.package("rJava",verbose=FALSE,quiet=TRUE))>0 &&
     )
 {
   library(rJava)
-  assign(".jbackend","rJava")
+  assign(".jbackend","rJava",pos=.iplots.env)
 } else {
   # ok, use SJava. this is a bit tricky, since we need to implement
   # a kind of rJava emulation by adding functions usually defined by rJava
@@ -68,8 +68,11 @@ if (length(.find.package("rJava",verbose=FALSE,quiet=TRUE))>0 &&
     }
     a
   }, pos=.iplots.env)
-  
-  assign(".jbackend","SJava")
+  # .jcast is a noop since SJava should find the proper method anyway
+  assign(".jcast", function(obj, new.class) obj, pos=.iplots.env)
+  # .jcheck is a noop as well
+  assign(".jcheck", function() invisible(), pos=.iplots.env)
+  assign(".jbackend","SJava",pos=.iplots.env)
 }
 
 # used objects
@@ -548,7 +551,7 @@ iobj.cur <- function(plot = .iplot.current) {
 
 iobj.rm <- function(which=iobj.cur()) {
   if (is.numeric(which)) which<-iobj.get(which)
-  .jcall(which$pm,"V","rm",which$obj)
+  .jcall(which$pm,"V","rm",.jcast(which$obj,"org/rosuda/ibase/toolkit/PlotObject"))
   which$plot$curobj<-.jcall(which$pm,"I","count")
   .jcall(which$pm,"V","update")
   rm(which)
@@ -743,9 +746,9 @@ iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ...) {
 }
 
 ievent.wait <- function() {
-  msg<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/MotifyMsg;","eventWait")
+  msg<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/NotifyMsg;","eventWait")
   if (!is.null(msg)) {
-    o<-list(obj=msg,msg=.jcall(msg,"I","getMessageID"),cmd=.jstrVal(.jcall(msg,"S","getCommand")),pars=.jcall(msg,"I","parCount"))
+    o<-list(obj=msg,msg=.jcall(msg,"I","getMessageID"),cmd=.jcall(msg,"S","getCommand"),pars=.jcall(msg,"I","parCount"))
     class(o)<-"ievent"
     return(o)
   }
