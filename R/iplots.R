@@ -70,6 +70,7 @@ if (length(.find.package("rJava",verbose=FALSE,quiet=TRUE))>0 &&
   }, pos=.iplots.env)
   # .jcast is a noop since SJava should find the proper method anyway
   assign(".jcast", function(obj, new.class) obj, pos=.iplots.env)
+  assign(".jnull", function(new.class=NULL) NULL, pos=.iplots.env)
   # .jcheck is a noop as well
   assign(".jcheck", function() invisible(), pos=.iplots.env)
   assign(".jbackend","SJava",pos=.iplots.env)
@@ -94,7 +95,7 @@ if (length(.find.package("rJava",verbose=FALSE,quiet=TRUE))>0 &&
 .First.lib <- function(lib, pkg) {
   dlp<-Sys.getenv("DYLD_LIBRARY_PATH")
   if (dlp!="") # for Mac OS X we need to remove X11 from lib-path
-    Sys.putenv("DYLD_LIBRARY_PATH"=sub("/usr/X11R6/lib","",dlp))
+    Sys.putenv("DYLD_LIBRARY_PATH"=gsub("/usr/X11R6/lib","",dlp))
   cp<-paste(lib,pkg,"cont","iplots.jar",sep=.Platform$file.sep)
   #  .JavaInit(list(classPath=c(cp)))
   .jinit(cp)
@@ -108,19 +109,6 @@ if (length(.find.package("rJava",verbose=FALSE,quiet=TRUE))>0 &&
   .iplots<<-list()
   .iplot.curid<<-1
   .iplot.current<<-NULL
-}
-
-# "Debug Initialize" - like .First.lib but for debugging purposes only
-# main use is to "source" this file and use .di() for initialization.
-.di <- function() {
-  dlp<-Sys.getenv("DYLD_LIBRARY_PATH")
-  if (dlp!="") # for Mac OS X we need to remove X11 from lib-path
-    Sys.putenv("DYLD_LIBRARY_PATH"=sub("/usr/X11R6/lib","",dlp))
-  .jinit(".") # debug version uses "." as classpath
-  .iplots.fw<<-.jnew("org/rosuda/iplots/Framework")
-  .iset.selection<<-vector()
-  .isets<<-list()
-  .isets[[1]]<<-list()
 }
 
 # helpler function to identify a class in a strstr manner (not nice)
@@ -206,11 +194,12 @@ iset.new <- function(name=NULL) {
   ci
 }
 
-# create a new variable (undocunmented!)
+# create a new variable (undocumented!)
 ivar.new <- function (name,cont) {
   if (!is.character(name) || length(name)>1)
     stop("variable name must be a single string")
   if(is.factor(cont) || is.character(cont)) {
+    cont<-as.factor(cont)
     id<-.jcall(.iplots.fw,"I","newVar",name,as.integer(cont),as.character(levels(cont)))
     if (id==-2) stop("Operation canceled by user.")
     if (id==-3) {
@@ -336,6 +325,21 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
   a
 }
 
+.iplot.iHammock <- function (vars, ...) {
+  vv<-vector()
+  for (v in vars) {
+    if (inherits(v, "ivar"))
+      vv<-c(vv,v$vid)
+    else
+      vv<-c(vv,v)
+  }
+  if (length(vv)<2)
+    stop("At least 2 valid variables are necessary for a hammock plot")
+  a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/HamCanvas;","newHammock",as.integer(vv)))
+  if (length(list(...))>0) iplot.opt(...,plot=a)
+  a
+}
+
 ivar.data <- function(var) {
   if (!inherits(var,"ivar"))
     stop("parameter is not an iVariable.")
@@ -387,6 +391,20 @@ ihist <- function(var, ...) {
     stop("ihist requires at least two data points")
    if ((is.vector(var) || is.factor(var)) && length(var)>1) var<-ivar.new(.jstrVal(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(deparse(substitute(var))))),var);
    .iplot.iHist(var, ...)
+}
+
+ihammock <- function(vars, ...) {
+  vv<-vector()
+  for (var in vars) {
+    var<-as.factor(var)
+    str(var)
+    if (length(var) > 1) {
+      var <- ivar.new(.jcall(.iplots.fw, "S", "getNewTmpVar", 
+                             "hammock."), var)
+      if (inherits(var,"ivar"))  vv <- c(vv,var$vid)
+    }
+  }
+  .iplot.iHammock(vv, ...)
 }
 
 iplot.opt <- function(..., plot=iplot.cur()) {
