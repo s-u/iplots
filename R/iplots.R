@@ -197,6 +197,7 @@ iset.list <- function() {
 
 iset.new <- function(name=NULL) {
   .iset.save()
+  if (is.null(name)) name<-.jnull("java/lang/String")
   ci<-.jcall(.iplots.fw,"I","newSet",name)+1
   .iplots<<-list()
   .iplot.current<<-NULL
@@ -396,7 +397,7 @@ iplot.opt <- function(..., plot=iplot.cur()) {
     .iplot.opt(...,plot=plot)
 }
 
-.iplot.opt <- function(xlim=NULL, ylim=NULL, col=NULL, ..., plot=iplot.cur()) {
+.iplot.opt <- function(xlim=NULL, ylim=NULL, col=NULL, bwidth=NULL, anchor=NULL, breaks=NULL, ..., plot=iplot.cur()) {
   if (is.numeric(plot)) plot<-.iplots[[as.integer(plot)]]
   if (!is.null(xlim)) .iplot.setXaxis(plot$obj,xlim[1],xlim[2])
   if (!is.null(ylim)) .iplot.setYaxis(plot$obj,ylim[1],ylim[2])
@@ -406,6 +407,19 @@ iplot.opt <- function(..., plot=iplot.cur()) {
     .jcall(plot$obj,"V","setUpdateRoot",as.integer(0))
     .jcall(plot$obj,"V","repaint")
   }
+  if (!is.null(breaks)) {
+    if (length(breaks)>0) anchor<-breaks[1]
+    if (length(breaks)>1) bwidth<-breaks[2]
+  }
+  if (!is.null(anchor) || !is.null(bwidth)) {
+    if (is.null(anchor) || is.null(bwidth)) {
+      p<-.jcall(plot$obj,"[D","getHistParam")
+      if (is.null(anchor)) anchor<-p[1]
+      if (is.null(bwidth)) bwidth<-p[2]
+    }
+    .jcall(plot$obj,"V","setHistParam",anchor,bwidth)
+  }
+      
   # dirty temporary fix
   .jcall(plot$obj,"V","forcedFlush")
   invisible()
