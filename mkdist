@@ -1,0 +1,62 @@
+#!/bin/sh
+
+SWD=`pwd`
+echo "Removing previous dist ..."
+rm -rf /tmp/iplots
+echo "Copying package base ..."
+cp -r ../iplots /tmp
+
+mkdir /tmp/iplots.java
+echo "Copying sources ..."
+if [ ! -e ../../../java/stat/klimt/src/inTr.java ]; then
+   echo "Can't find sources! Check out both R and java modules!"
+   exit 1
+fi
+cp ../../../java/stat/klimt/src/*.java /tmp/iplots.java
+cp ../../../java/stat/klimt/iPlots.jpg /tmp/iplots.java/splash.jpg
+rm /tmp/iplots/mkdist
+
+cd /tmp/iplots
+VER=`awk -v ORS= '/Package version:/ { print $4 }' R/iplots.R`
+echo "iplots version ${VER}"
+
+cd /tmp/iplots.java
+echo Removing plugins and wrappers ...
+rm -f PluginDeriveVar.java PluginGetTreeR.java PluginStartRserve.java PoGraSSSVG.java tfw.java Wrapper.java StaticReader.java PGSviewer.java
+
+if [ `uname` != "Darwin" ]; then
+    echo "Non-Mac platform. MacOS (MRJ) support will NOT be compiled."
+    rm -f PlatformMac.java
+fi
+
+# adjust version number
+cat Common.java | sed "s/Version=\"[0-9]*.[0-9]*\"/Version=\"${VER}\"/" > c
+rm Common.java
+mv c Common.java
+echo Compiling sources ...
+javac -O *.java
+echo Creating archive ...
+jar fc iplots.jar *.class splash.jpg
+
+echo "Copying java archive ..."
+mkdir -p /tmp/iplots/inst/cont
+cp iplots.jar /tmp/iplots/inst/cont
+
+cd /tmp/iplots
+echo "Removing CVS stuff ..."
+rm -rf `find . -name CVS`
+echo "Updating INDEX ..."
+cd ..
+R CMD Rdindex iplots > iplots/INDEX
+echo "Updating version ..."
+cd iplots
+cat DESCRIPTION| sed "s/Version:.*/Version: ${VER}/" > d
+mv d DESCRIPTION
+echo "Creating package ..."
+cd ..
+tar fcz iplots_${VER}.tar.gz iplots
+cd ${SWD}
+mv /tmp/iplots_${VER}.tar.gz ..
+rm -rf /tmp/iplots /tmp/iplots.java
+echo "Done."
+ls -l ../iplots_${VER}.tar.gz
