@@ -379,7 +379,7 @@ iobj.list <- function(plot = .iplot.current) {
 }
 
 iobj.get <- function(pos, plot = iplot.cur()) {
-  if (!is.numeric(plot)) plot<-.iplots[[plot]]
+  if (is.numeric(plot)) plot<-.iplots[[plot]]
   if (!inherits(plot,"iplot"))
     stop("The specified plot is no iplot")
   pm<-.Java(plot$obj,"getPlotManager")
@@ -491,7 +491,8 @@ iobj.opt <- function(o=iobj.cur(),...) {
   }
   if (!is.null(col)|| !is.null(fill)) .iobj.color(o,col,fill)
   if (!is.null(reg)||!is.null(a)||!is.null(b)) .iabline.set(a=a,b=b,reg=reg,obj=o)
-  if (!is.null(visible)) .Java(o$obj,"setVisible",visible);
+  if (!is.null(visible))
+    .Java(o$obj,"setVisible",as.logical(visible))
   if (!is.null(coord) && length(coord)>0) {
     if (length(coord)==1)
       .Java(o$obj,"setCoordinates",as.integer(coord))
@@ -596,15 +597,16 @@ iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ...) {
   a<-l$a
   b<-l$b
   plot<-obj$plot;
-  ax<-.Java(.iplot.current$obj,"getXAxis")
+  ax<-.Java(plot$obj,"getXAxis")
   if (is.null(ax)) {
     stop("The plot has no X axis")
   } else {
     r<-.Java(ax,"getValueRange")
     mi<-min(r)
     mx<-max(r)
-    iobj.opt(obj,c(mi,mx),c(a+b*mi,a+b*mx))
+    iobj.opt(o=obj,c(mi,mx),c(a+b*mi,a+b*mx))
   }
+  invisible()
 }
 
 ievent.wait <- function() {
