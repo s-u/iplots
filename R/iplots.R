@@ -2,7 +2,7 @@
 
 library(SJava);
 .First.lib <- function(lib, pkg) {
-  cp<-paste(lib,pkg,"cont",sep=.Platform$file.sep)
+  cp<-paste(lib,pkg,"cont","iplots.jar",sep=.Platform$file.sep)
   .JavaInit(list(classPath=c(cp)))
   fw<<-.JavaConstructor("Framework")
 }
@@ -34,8 +34,10 @@ iplot.set <- function (which=iplot.next()) {
 
 ivar <- function (vid) { iset.var(vid) }
 
+# iplot managemen functions
+
 iplot.list <- function () {
-  .iplots
+  if (exists(".iplots")) .iplots else list()
 }
 
 iplot.new <- function (plotObj) {
@@ -56,14 +58,21 @@ iplot.prev <- function(which = iplot.cur()) {
  ((which-2)%%length(.iplots))+1
 }
 
+iplot.set <- function(which=iplot.next()) {
+  if (which>=0 && which<length(.iplots)) 
+    .iplot.current <<- .iplots[[.iplot.curid <<- which]];
+}
+
+# generic print for i[lots
 print.iplot <- function(p) { cat("ID:",p$id," Name: \"",attr(p,"iname"),"\"\n",sep="") }
 
-iplot.iPlot <- function (v1,v2) {
-  lastPlot<<-.Java(fw,"newScatterplot",v1,v2)
-  iplot.new(lastPlot)
-}
+# low-level plot calls
+
+iplot.iPlot <- function (v1,v2) { iplot.new(lastPlot<<-.Java(fw,"newScatterplot",v1,v2)) }
 iplot.iHist <- function (v1) { iplot.new(lastPlot<-.Java(fw,"newHistogram",v1)) }
 iplot.iBar  <- function (v1) { iplot.new(lastPlot<-.Java(fw,"newBarchart",v1)) }
+
+# user-level plot calls
 
 iplot <- function(v1,v2) {
    if ((is.vector(v1) || is.factor(v1)) && length(v1)>1) v1<-ivar.new(.Java(fw,"getNewTmpVar",as.character(deparse(substitute(v1)))),v1);
@@ -81,14 +90,17 @@ ihist <- function(v1) {
    iplot.iHist(v1)
 }
 
-iplot.showVars <- function() { .Java(fw,"ivar.newFrame"); }
+# old API functions
 
+iplot.showVars <- function() { .Java(fw,"ivar.newFrame"); }
 iplot.setXaxis <- function(ipl=lastPlot,x1,x2) { .Java(.Java(ipl,"getXAxis"),"setValueRange",x1,x2-x1); }
 iplot.setYaxis <- function(ipl=lastPlot,x1,x2) { .Java(.Java(ipl,"getYAxis"),"setValueRange",x1,x2-x1); }
 iplot.resetXaxis <- function(ipl=lastPlot) { .Java(.Java(ipl,"getXAxis"),"setDefaultRange"); }
 iplot.resetYaxis <- function(ipl=lastPlot) { .Java(.Java(ipl,"getYAxis"),"setDefaultRange"); }
 iplot.resetAxes <- function(ipl=lastPlot) { resetXaxis(ipl); resetYaxis(ipl); }
-iplot.set <- function(ipl) { lastPlot<<-ipl; }
+iset.df <- function(df) { ndf<-list(); for(i in names(df)) { ndf[[i]]<-ivar.new(i,df[[i]]) }; as.data.frame(ndf) }
+
+# selection/highlighting API
 
 iset.select <- function(what,mark=TRUE) {
   m<-.Java(.Java(fw,"getCurrentSet"),"getMarker")
@@ -100,8 +112,6 @@ iset.select <- function(what,mark=TRUE) {
   .Java(fw,"updateMarker")
 }
 
-iset.df <- function(df) { ndf<-list(); for(i in names(df)) { ndf[[i]]<-ivar.new(i,df[[i]]) }; as.data.frame(ndf) }
-
 iset.selected <- function() {
   v<-vector()
   m<-.Java(.Java(fw,"getCurrentSet"),"getMarker")
@@ -110,14 +120,16 @@ iset.selected <- function() {
   v;
 }
 
+iset.selectAll <- function() { .Java(.Java(.Java(fw,"getCurrentSet"),"getMarker"),"selectAll",as.integer(1)); .Java(fw,"updateMarker"); }
+iset.selectNone <- function() { .Java(.Java(.Java(fw,"getCurrentSet"),"getMarker"),"selectNone"); .Java(fw,"updateMarker"); }
+
+# brushing API
+
 iset.brush <- function(col) {
   if (is.numeric(col) && !is.integer(col)) col<-as.integer(col)
   if (is.factor(col)) col<-as.integer(as.integer(col)+1)
   .Java(fw,"setSecMark",col);
 }
-
-iset.selectAll <- function() { .Java(.Java(.Java(fw,"getCurrentSet"),"getMarker"),"selectAll",as.integer(1)); .Java(fw,"updateMarker"); }
-iset.selectNone <- function() { .Java(.Java(.Java(fw,"getCurrentSet"),"getMarker"),"selectNone"); .Java(fw,"updateMarker"); }
 
 iset.updateVars <- function() { .Java(fw,"updateVars"); }
 
@@ -125,6 +137,8 @@ iset.var <- function(vid) {
   vid<-as.integer(vid)
   if(.Java(fw,"varIsNum",vid)!=0) .Java(fw,"getDoubleContent",vid) else as.factor(.Java(fw,"getStringContent",vid))
 }
+
+# iobj API
 
 iobj.new <- function(plot, type) {
   pm<-.Java(plot$obj,"getPlotManager")
@@ -168,10 +182,10 @@ iobj.set <- function(o,...) {
   .Java(o$obj,"update")
 }
 
-iobj.color <- function(obj, fg=NULL, bg=NULL) {
+iobj.color <- function(obj, col=NULL, fill=NULL) {
   if (is.numeric(obj)) obj<-iobj.get(as.integer(obj))
-  if (!is.null(fg)) .Java(obj$obj,"setDrawColor",.JavaConstructor("PlotColor",fg))
-  if (!is.null(bg)) .Java(obj$obj,"setFillColor",.JavaConstructor("PlotColor",bg))
+  if (!is.null(col)) .Java(obj$obj,"setDrawColor",.JavaConstructor("PlotColor",col))
+  if (!is.null(fill)) .Java(obj$obj,"setFillColor",.JavaConstructor("PlotColor",fill))
   .Java(obj$obj,"update")
 }
 
@@ -183,13 +197,16 @@ print.iobj <- function(o) {
   cat(.Java(o$obj,"toString"),"\n")
 }
 
-ilines <- function(x,y) {
+ilines <- function(x,y,col=NULL,fill=NULL) {
   if (!inherits(.iplot.current,"iplot")) {
     warning("There is no current plot")
   } else {
     pp<-iobj.new(.iplot.current,"PlotPolygon")
     .Java(pp$obj,"set",as.numeric(x),as.numeric(y))
-    .Java(pp$obj,"update")
+    if (!is.null(col) || !is.null(fill))
+      iobj.color(pp,col,fill) # includes "update"
+    else
+      .Java(pp$obj,"update")
   }
 }
 
