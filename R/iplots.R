@@ -43,8 +43,8 @@ library(rJava)
   dlp<-Sys.getenv("DYLD_LIBRARY_PATH")
   if (dlp!="") # for Mac OS X we need to remove X11 from lib-path
     Sys.putenv("DYLD_LIBRARY_PATH"=sub("/usr/X11R6/lib","",dlp))
-  .JavaInit(list(classPath=".")) # debug version uses "." as classpath
-  .iplots.fw<<-.JavaConstructor("Framework")
+  .jinit(".") # debug version uses "." as classpath
+  .iplots.fw<<-.jnew("org/rosuda/iplots/Framework")
   .iset.selection<<-vector()
   .isets<<-list()
   .isets[[1]]<<-list()
@@ -131,11 +131,11 @@ ivar.new <- function (name,cont) {
   if (!is.character(name) || length(name)>1)
     stop("variable name must be a single string")
   if(is.factor(cont) || is.character(cont)) {
-    id<-.jcall(.iplots.fw,"I","newVar",name,as.character(cont))
+    id<-.jcall(.iplots.fw,"I","newVar",name,as.integer(cont),as.character(levels(cont)))
     if (id==-2) stop("Operation canceled by user.")
     if (id==-3) {
       iset.new()
-      id<-.jcall(.iplots.fw,"I","newVar",name,as.character(cont))
+      id<-.jcall(.iplots.fw,"I","newVar",name,as.integer(cont),as.character(levels(cont)))
       if (id<0)
         stop("Unable to create an iVariable");
     }
@@ -367,9 +367,9 @@ iplot.data <- function(id=NULL) {
 
 # old API functions
 
-iplot.showVars <- function() { .Java(.iplots.fw,"ivar.newFrame"); }
-iplot.resetXaxis <- function(ipl=lastPlot) { .Java(.Java(ipl,"getXAxis"),"setDefaultRange"); }
-iplot.resetYaxis <- function(ipl=lastPlot) { .Java(.Java(ipl,"getYAxis"),"setDefaultRange"); }
+iplot.showVars <- function() { .jcall(.iplots.fw,"V","ivar.newFrame"); }
+iplot.resetXaxis <- function(ipl=lastPlot) { .jcall(.jcall(ipl,"Lorg/rosuda/ibase/toolkit/Axis;","getXAxis"),"V","setDefaultRange"); }
+iplot.resetYaxis <- function(ipl=lastPlot) { .jcall(.jcall(ipl,"Lorg/rosuda/ibase/toolkit/Axis;","getYAxis"),"V","setDefaultRange"); }
 iplot.resetAxes <- function(ipl=lastPlot) { resetXaxis(ipl); resetYaxis(ipl); }
 iset.df <- function(df) { ndf<-list(); for(i in names(df)) { ndf[[i]]<-ivar.new(i,df[[i]]) }; as.data.frame(ndf) }
 
@@ -387,17 +387,12 @@ iset.select <- function(what, mode="replace", mark=TRUE) {
 }
 
 iset.selected <- function() {
-#  v<-vector()
   m<-.jcall(.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","getCurrentSet"),"Lorg/rosuda/ibase/SMarker;","getMarker")
-  # this will fail - we need .jarrayVal(..) or automatic conversion
   .jcall(m,"[I","getSelectedIDs",evalArray=TRUE)+1
-#  numc<-.Java(m,"size")
-#  for(i in 1:numc) { if(.Java(m,"get",as.integer(i-1))<0) v<-c(v,i) }
-#  v;
 }
 
 iset.selectAll <- function() { .jcall(.jcall(.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","getCurrentSet"),"Lorg/rosuda/ibase/SMarker;","getMarker"),"V","selectAll",as.integer(1)); .jcall(.iplots.fw,"V","updateMarker"); }
-iset.selectNone <- function() { .jcall(.jcall(.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","getCurrentSet"),"Lorg/rosuda/ibase/SMarker;","getMarker"),"V","selectNone",as.integer(1)); .jcall(.iplots.fw,"V","updateMarker"); }
+iset.selectNone <- function() { .jcall(.jcall(.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","getCurrentSet"),"Lorg/rosuda/ibase/SMarker;","getMarker"),"V","selectNone"); .jcall(.iplots.fw,"V","updateMarker"); }
 
 # brushing API
 
@@ -407,9 +402,9 @@ iset.brush <- function(col) {
   if (is.null(col) || is.na(col)) col<-as.integer(c(0,0))
   if (is.numeric(col) && !is.integer(col)) col<-as.integer(col)
   if (is.factor(col)) col<-as.integer(as.integer(col)+1)
-  .Java(.iplots.fw,"setSecMark",col);
+  .jcall(.iplots.fw,"V","setSecMark",col);
   # dirty temporary fix
-  .Java(.iplot.current$obj,"forcedFlush");
+  .jcall(.iplot.current$obj,"V","forcedFlush");
   invisible()
 }
 
@@ -482,23 +477,23 @@ iobj.rm <- function(which=iobj.cur()) {
 
 .iobj.opt.PlotText <- function(o,x=NULL,y=NULL,txt=NULL,ax=NULL,ay=NULL) {
   if (!is.null(x) || !is.null(y) || !is.null(ax) || !is.null(ay)) {
-    if (is.null(x)) x<-.Java(o$obj,"getX")
-    if (is.null(y)) y<-.Java(o$obj,"getY")
+    if (is.null(x)) x<-.jcall(o$obj,"[D","getX",evalArray=TRUE)
+    if (is.null(y)) y<-.jcall(o$obj,"[D","getY",evalArray=TRUE)
     if (length(x)==1) x<-c(x,x)
     if (length(y)==1) y<-c(y,y)
     if (is.null(ax) && is.null(ay))
-      .Java(o$obj,"set",as.real(x),as.real(y))
+      .jcall(o$obj,"V","set",as.real(x),as.real(y))
     else {
-      if (is.null(ax)) ax<-.Java(o$obj,"getAX")
-      if (is.null(ay)) ay<-.Java(o$obj,"getAY")
+      if (is.null(ax)) ax<-.jcall(o$obj,"[D","getAX",evalArray=TRUE)
+      if (is.null(ay)) ay<-.jcall(o$obj,"[D","getAY",evalArray=TRUE)
       if (length(ax)==1) ax<-c(ax,ax)
       if (length(ay)==1) ay<-c(ay,ay)
-      .Java(o$obj,"set",as.real(x),as.real(y),as.real(ax),as.real(ay))
+      .jcall(o$obj,"V","set",as.real(x),as.real(y),as.real(ax),as.real(ay))
     }
   } else {
     if (!is.null(txt)) {
       if (length(txt)==1) txt<-c(txt,txt)
-      .Java(o$obj,"set",as.character(txt))
+      .jcall(o$obj,"V","set",as.character(txt))
     }
   }
 }
@@ -517,9 +512,11 @@ itext <- function(x, y=NULL, labels=seq(along=x), ax=NULL, ay=NULL, ...) {
 }
 
 .iobj.opt.get.PlotText <- function(o) {
-  return(list(x=.Java(o$obj,"getX"),y=.Java(o$obj,"getY"),
-              ax=.Java(o$obj,"getAX"),ay=.Java(o$obj,"getAY"),
-              txt=.Java(o$obj,"getText")))
+  return(list(x=.jcall(o$obj,"[D","getX",evalArray=TRUE),
+              y=.jcall(o$obj,"[D","getY",evalArray=TRUE),
+              ax=.jcall(o$obj,"[D","getAX",evalArray=TRUE),
+              ay=.jcall(o$obj,"[D","getAY",evalArray=TRUE),
+              txt=.jstrVal(.jcall(o$obj,"S","getText"))))
 }
 
 iobj.opt <- function(o=iobj.cur(),...) {
@@ -541,7 +538,7 @@ iobj.opt <- function(o=iobj.cur(),...) {
   .co<-xy.coords(x,y)
   x<-.co$x
   y<-.co$y
-  .Java(o$obj,"set",x,y)
+  .jcall(o$obj,"V","set",x,y)
 }
 
 .iobj.opt <- function(o=iobj.cur(),...,col=NULL, fill=NULL, layer=NULL, reg=NULL, visible=NULL, coord=NULL, update=TRUE, a=NULL, b=NULL) {
@@ -553,7 +550,7 @@ iobj.opt <- function(o=iobj.cur(),...) {
     else if (o$obj[[2]]=="PlotPolygon")
       .iobj.opt.PlotPolygon(o,...)
     else
-      .Java(o$obj,"set",...)
+      .jcall(o$obj,"V","set",...)
   }
   if (!is.null(col)|| !is.null(fill)) .iobj.color(o,col,fill)
   if (!is.null(reg)||!is.null(a)||!is.null(b)) .iabline.set(a=a,b=b,reg=reg,obj=o)
@@ -582,15 +579,15 @@ iobj.set <- function(which) {
   if (is.numeric(obj)) obj<-iobj.get(as.integer(obj))
   if (!is.null(col))
     if (is.na(col))
-      .Java(obj$obj,"setDrawColor",NULL)
+      .jcall(obj$obj,"V","setDrawColor",NULL)
     else
-      .Java(obj$obj,"setDrawColor",.JavaConstructor("PlotColor",col))
+      .jcall(obj$obj,"V","setDrawColor",.jnew("PlotColor",col))
 
   if (!is.null(fill))
     if (is.na(fill))
-      .Java(obj$obj,"setFillColor",NULL)
+      .jcall(obj$obj,"V","setFillColor",NULL)
     else
-      .Java(obj$obj,"setFillColor",.JavaConstructor("PlotColor",fill))      
+      .jcall(obj$obj,"V","setFillColor",.jnew("PlotColor",fill))      
   
   .jcall(obj$obj,"V","update")
   # dirty temporary fix
@@ -646,11 +643,11 @@ iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ...) {
   if (is.null(.iplot.current) || !inherits(.iplot.current,"iplot")) {
     stop("There is no current plot")
   } else {
-    ax<-.Java(.iplot.current$obj,"getXAxis")
+    ax<-.jcall(.iplot.current$obj,"Lorg/rosuda/ibase/toolkit/Axis;","getXAxis")
     if (is.null(ax)) {
       stop("The plot has no X axis")
     } else {
-      r<-.Java(ax,"getValueRange")
+      r<-.jcall(ax,"[D","getValueRange",evalArray=TRUE)
       mi<-min(r)
       mx<-max(r)
       ilines(c(mi,mx),c(a+b*mi,a+b*mx),...)
@@ -663,11 +660,11 @@ iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ...) {
   a<-l$a
   b<-l$b
   plot<-obj$plot;
-  ax<-.Java(plot$obj,"getXAxis")
+  ax<-.jcall(plot$obj,"Lorg/rosuda/ibase/toolkit/Axis;","getXAxis")
   if (is.null(ax)) {
     stop("The plot has no X axis")
   } else {
-    r<-.Java(ax,"getValueRange")
+    r<-.jcall(ax,"[D","getValueRange",evalArray=TRUE)
     mi<-min(r)
     mx<-max(r)
     iobj.opt(o=obj,c(mi,mx),c(a+b*mi,a+b*mx))
@@ -676,9 +673,9 @@ iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ...) {
 }
 
 ievent.wait <- function() {
-  msg<-.Java(.iplots.fw,"eventWait")
+  msg<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/MotifyMsg;","eventWait")
   if (!is.null(msg)) {
-    o<-list(obj=msg,msg=.Java(msg,"getMessageID"),cmd=.Java(msg,"getCommand"),pars=.Java(msg,"parCount"))
+    o<-list(obj=msg,msg=.jcall(msg,"I","getMessageID"),cmd=.jstrVal(.jcall(msg,"S","getCommand")),pars=.jcall(msg,"I","parCount"))
     class(o)<-"ievent"
     return(o)
   }
