@@ -289,7 +289,7 @@ iplot <- function(x,y=NULL,...) {
 
 ibar <- function(var, ...) {
   len<-length(var)
-  if (inherits(x,"ivar")) len<-.Java(x$obj,"size")
+  if (inherits(var,"ivar")) len<-.Java(var$obj,"size")
   if (len<2)
     stop("ibar requires at least two data points")
    if ((is.vector(var) || is.factor(var)) && length(var)>1) var<-ivar.new(.Java(.iplots.fw,"getNewTmpVar",as.character(deparse(substitute(var)))),var);
@@ -298,7 +298,7 @@ ibar <- function(var, ...) {
 
 ihist <- function(var, ...) {
   len<-length(var)
-  if (inherits(x,"ivar")) len<-.Java(x$obj,"size")
+  if (inherits(var,"ivar")) len<-.Java(var$obj,"size")
   if (len<2)
     stop("ihist requires at least two data points")
    if ((is.vector(var) || is.factor(var)) && length(var)>1) var<-ivar.new(.Java(.iplots.fw,"getNewTmpVar",as.character(deparse(substitute(var)))),var);
