@@ -16,18 +16,104 @@ library(SJava);
 # library initialization: Add "<iplots>/cont/iplots.jar" to classpath,
 # initialize Java and create an instance on the Framework "glue" class
 .First.lib <- function(lib, pkg) {
+  dlp<-Sys.getenv("DYLD_LIBRARY_PATH")
+  if (dlp!="") # for Mac OS X we need to remove X11 from lib-path
+    Sys.putenv("DYLD_LIBRARY_PATH"=sub("/usr/X11R6/lib","",dlp))
   cp<-paste(lib,pkg,"cont","iplots.jar",sep=.Platform$file.sep)
   .JavaInit(list(classPath=c(cp)))
   .iplots.fw<<-.JavaConstructor("Framework")
   .iset.selection<<-vector()
+  .isets<<-list()
+  .isets[[1]]<<-list()
 }
 
 # "Debug Initialize" - like .First.lib but for debugging purposes only
 # main use is to "source" this file and use .di() for initialization.
 .di <- function() {
+  dlp<-Sys.getenv("DYLD_LIBRARY_PATH")
+  if (dlp!="") # for Mac OS X we need to remove X11 from lib-path
+    Sys.putenv("DYLD_LIBRARY_PATH"=sub("/usr/X11R6/lib","",dlp))
   .JavaInit(list(classPath=".")) # debug version uses "." as classpath
   .iplots.fw<<-.JavaConstructor("Framework")
   .iset.selection<<-vector()
+  .isets<<-list()
+  .isets[[1]]<<-list()
+}
+
+# iSet API
+
+# select a current dataset
+iset.set <- function(which = iset.next()) {
+  if (length(which)!=1)
+    stop("You must specify exactly one dataset.")
+
+  ci<-.Java(.iplots.fw,"curSetId")+1
+  .iset.save(ci)
+  
+  if (is.character(which)) {
+    nso<-.Java(.iplots.fw,"selectSet",which)
+    if (is.null(nso))
+      stop("Therre is no such iSet.")
+    ci<-.Java(.iplots.fw,"curSetId")+1
+    .iplots<<-.isets[[ci]]$iplots
+    .iplot.curid<<-.isets[[ci]]$iplot.cid
+    .iplot.current<<-.isets[[ci]]$iplot.cur
+    ci
+  } else {
+    if (!is.numeric(which))
+      stop("The 'which' parameter mut be a name or an ID.")
+
+    nso<-.Java(.iplots.fw,"selectSet",as.integer(which-1))
+    if (is.null(nso))
+      stop("Invalid iSet ID.")
+    ci<-.Java(.iplots.fw,"curSetId")+1
+    .iplots<<-.isets[[ci]]$iplots
+    .iplot.curid<<-.isets[[ci]]$iplot.cid
+    .iplot.current<<-.isets[[ci]]$iplot.cur
+    .Java(.iplots.fw,"getSetName")
+  }
+}
+
+iset.cur <- function() {
+  .Java(.iplots.fw,"curSetId")+1
+}
+
+iset.next <- function(which=iset.cur()) {
+  if (!is.numeric(which))
+    stop("'which' must be a number.")
+  w<-as.integer(which)-1
+  t<-.Java(.iplots.fw,"countSets")
+  ((w+1) %% t)+1
+}
+
+iset.next <- function(which=iset.cur()) {
+  if (!is.numeric(which))
+    stop("'which' must be a number.")
+  w<-as.integer(which)-1
+  t<-.Java(.iplots.fw,"countSets")
+  ((w-1) %% t)+1
+}
+
+iset.list <- function() {
+  tot<-.Java(.iplots.fw,"countSets")
+  l<-vector()
+  for (i in 1:tot)
+    l[.Java(.iplots.fw,"getSetName",as.integer(i-1))]<-i
+  l
+}
+
+.iset.save <-function (ci=iset.cur()) {
+  .isets[[ci]]<<-list(iplots=.iplots,iplot.cid<-.iplot.curid,iplot.cur<-.iplot.current)
+}
+
+iset.new <- function(name=NULL) {
+  .iset.save()
+  ci<-.Java(.iplots.fw,"newSet",name)+1
+  .iplots<<-list()
+  .iplot.current<<-NULL
+  .iplot.curid<<-0
+  iset.set(ci)
+  ci
 }
 
 # create a new variable (undocunmented!)
