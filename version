@@ -1,0 +1,8 @@
+#!/bin/sh
+
+VER=`awk -v ORS= '/Package version:/ { print $4 }' R/iplots.R`
+if test "$1" == "-f"; then 
+    echo "iplots_${VER}.tar.gz"
+else
+    echo "${VER}"
+fi
