@@ -1,7 +1,7 @@
 packageName <- "iplots"
 
 # iplots - interactive plots for R
-# Package version: 0.1-12
+# Package version: 0.1-13
 #
 # $Id$
 # (C)Copyright 2003 Simon Urbanek
@@ -264,7 +264,7 @@ iplot.list <- function () {
 }
 
 .iplot.close <- function(plot) {
-  .jcall(.jcall(plot$obj,"Lorg/awt/Frame;","getFrame"),"V","dispose")
+  .jcall(.jcall(plot$obj,"Ljava/awt/Frame;","getFrame"),"V","dispose")
 }
 
 iplot.off <- function(plot=iplot.cur()) {
