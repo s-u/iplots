@@ -386,28 +386,39 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
 # user-level plot calls
 #==========================================================================
 
-iplot <- function(x,y=NULL,...) {
-  lx<-length(x)
-  ry<-y
-  ny<-deparse(substitute(y))
-  nx<-deparse(substitute(x))
-  if (inherits(x,"ivar")) lx<-.jcall(x$obj,"I","size")
+iplot <- function(x,y=NULL,xlab=NULL,ylab=NULL,...) {
+  if (inherits(x,"ivar") || inherits(y,"ivar")) {
+    lx <- if (inherits(x,"ivar")) .jcall(x$obj,"I","size") else length(x)
+    ly <- if (inherits(y,"ivar")) .jcall(y$obj,"I","size") else length(y)
+  } else {
+    xlabel <- if (!missing(x)) 
+        deparse(substitute(x))
+    ylabel <- if (!missing(y)) 
+        deparse(substitute(y))
+    xy <- xy.coords(x, y, xlabel, ylabel, log="")
+    xlab <- if (is.null(xlab)) 
+        xy$xlab
+    else xlab
+    ylab <- if (is.null(ylab)) 
+        xy$ylab
+    else ylab
+    nx<-xlab
+    ny<-ylab
+    x<-xy$x
+    y<-xy$y
+    lx<-length(x)
+    ly<-length(y)
+  }
   if (lx<2)
     stop("iplot coordinates must specify at least two points")
   if (!inherits(y,"ivar") && length(y)==1) ry<-rep(y,lx)
-  if (is.null(y)) {
-    ny<-"index"
-    ry<-1:lx
-  }
-  ly<-length(ry)
-  if (inherits(y,"ivar")) ly<-.jcall(y$obj,"I","size")
   if (lx!=ly)
-    stop("Incompatible vector lengths. Both vectors x and y must be of the same length.")
+    stop(paste("Incompatible vector lengths (",lx," and ",ly,").\nBoth vectors x and y must be of the same length.",sep=''))
 
-  if ((is.vector(x) || is.factor(x)) && length(x)>1)
+  if (!inherits(x,"ivar"))
     x<-ivar.new(.ivar.valid.name(nx), x)
-  if ((is.vector(ry) || is.factor(ry)) && length(ry)>1)
-    y<-ivar.new(.ivar.valid.name(ny),ry)
+  if (!inherits(y,"ivar"))
+    y<-ivar.new(.ivar.valid.name(ny), y)
   if (is.null(x)) stop("Invalid X variable")
   if (is.null(y)) stop("Invalid Y variable")
   .iplot.iPlot(x,y,...)
