@@ -504,22 +504,6 @@ ihammock <- function(vars, ...) {
   .iplot.iHammock(vv, ...)
 }
 
-
-imosaic <- function(vars, ...) {
-  vv<-vector()
-  i <- 1
-  for (var in vars) {
-    var<-as.factor(var)
-    varname <- names(vars)[[i]]
-    if (length(var) > 1) {
-      var <- ivar.new(.ivar.valid.name(varname), as.factor(var))
-      if (inherits(var,"ivar"))  vv <- c(vv,var$vid)
-    }
-    i <- i+1
-  }
-  .iplot.iMosaic(vv, ...)
-}
-
 ipcp <- function(vars, ...) {
   vv<-vector()
   i <- 1
