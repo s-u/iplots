@@ -7,6 +7,8 @@ library(SJava);
   fw<<-.JavaConstructor("Framework")
 }
 
+.di <- function() { .JavaInit(list(classPath=".")); fw<<-.JavaConstructor("Framework") }
+
 ivar.new <- function (name,cont) {
   if(is.factor(cont)) {
     v<-.Java(fw,"newVar",name,as.character(cont))
@@ -17,11 +19,51 @@ ivar.new <- function (name,cont) {
   }
   .Java(fw,"newVar",name,cont)
 }
+
 ivar.update <- function (vid,cont) { .Java(fw,"replaceVar",vid,cont); .Java(fw,"updateVars"); }
 
-iplot.iPlot <- function (v1,v2) { lastPlot<<-.Java(fw,"newScatterplot",v1,v2) }
-iplot.iHist <- function (v1) { lastPlot<-.Java(fw,"newHistogram",v1) }
-iplot.iBar  <- function (v1) { lastPlot<-.Java(fw,"newBarchart",v1) }
+iplot.set <- function (which=iplot.next()) {
+  a<-try(.iplots[[which<-as.integer(which)]])
+  if (!is.list(a)) {
+    warning("There is no such plot")
+  } else {
+    .iplot.current<<-a
+    .iplot.curid<<-which
+  }
+}
+
+ivar <- function (vid) { iset.var(vid) }
+
+iplot.list <- function () {
+  .iplots
+}
+
+iplot.new <- function (plotObj) {
+  if (!exists(".iplots")) {
+    .iplots <<- list()
+  }
+  a<-list(id=(length(.iplots)+1),obj=plotObj)
+  class(a)<-"iplot"
+  attr(a,"iname")<-.Java(plotObj,"getTitle")
+  .iplot.current <<- .iplots[[.iplot.curid <<- (length(.iplots)+1)]] <<- a
+}
+
+iplot.cur <- function() { .iplot.curid }
+iplot.next <- function(which = iplot.cur()) {
+ (which%%length(.iplots))+1
+}
+iplot.prev <- function(which = iplot.cur()) {
+ ((which-2)%%length(.iplots))+1
+}
+
+print.iplot <- function(p) { cat("ID:",p$id," Name: \"",attr(p,"iname"),"\"\n",sep="") }
+
+iplot.iPlot <- function (v1,v2) {
+  lastPlot<<-.Java(fw,"newScatterplot",v1,v2)
+  iplot.new(lastPlot)
+}
+iplot.iHist <- function (v1) { iplot.new(lastPlot<-.Java(fw,"newHistogram",v1)) }
+iplot.iBar  <- function (v1) { iplot.new(lastPlot<-.Java(fw,"newBarchart",v1)) }
 
 iplot <- function(v1,v2) {
    if ((is.vector(v1) || is.factor(v1)) && length(v1)>1) v1<-ivar.new(.Java(fw,"getNewTmpVar",as.character(deparse(substitute(v1)))),v1);
@@ -79,4 +121,75 @@ iset.selectNone <- function() { .Java(.Java(.Java(fw,"getCurrentSet"),"getMarker
 
 iset.updateVars <- function() { .Java(fw,"updateVars"); }
 
-iset.var <- function(vid) { if(.Java(fw,"varIsNum",vid)!=0) .Java(fw,"getDoubleContent",vid) else as.factor(.Java(fw,"getStringContent",vid)) }
+iset.var <- function(vid) {
+  vid<-as.integer(vid)
+  if(.Java(fw,"varIsNum",vid)!=0) .Java(fw,"getDoubleContent",vid) else as.factor(.Java(fw,"getStringContent",vid))
+}
+
+iobj.new <- function(plot, type) {
+  pm<-.Java(plot$obj,"getPlotManager")
+  a<-list(obj=.JavaConstructor(type,pm),pm=pm,plot=plot)
+  class(a)<-"iobj"
+  plot$curobj<-a
+}
+
+iobj.list <- function(plot = .iplot.current) {
+  pm<-.Java(plot$obj,"getPlotManager")
+  i<-.Java(pm,"count")
+  l<-list()
+  if (i>0) {
+    for(j in 1:i) {
+      a<-list(obj=.Java(pm,"get",as.integer(j-1)),pm=pm,plot=plot)
+      class(a)<-"iobj"
+      l[[j]]<-a
+    }
+  } 
+  l
+}
+
+iobj.get <- function(pos, plot = .iplot.current) {
+  pm<-.Java(plot$obj,"getPlotManager")
+  a<-list(obj=.Java(pm,"get",as.integer(pos-1)),pm=pm,plot=plot)
+  class(a)<-"iobj"
+  a
+}
+
+iobj.rm <- function(obj) {
+  if (is.numeric(obj)) obj<-iobj.get(obj)
+  .Java(obj$pm,"rm",obj$obj)
+  obj$plot$curobj<-.Java(obj$pm,"count")
+  .Java(obj$pm,"update")
+  rm(obj)
+}
+
+iobj.set <- function(o,...) {
+  if (is.numeric(o)) o<-iobj.get(o)
+  .Java(o$obj,"set",...)
+  .Java(o$obj,"update")
+}
+
+iobj.color <- function(obj, fg=NULL, bg=NULL) {
+  if (is.numeric(obj)) obj<-iobj.get(as.integer(obj))
+  if (!is.null(fg)) .Java(obj$obj,"setDrawColor",.JavaConstructor("PlotColor",fg))
+  if (!is.null(bg)) .Java(obj$obj,"setFillColor",.JavaConstructor("PlotColor",bg))
+  .Java(obj$obj,"update")
+}
+
+iobj.cur <- function(plot=.iplot.current) {
+  plot$curobj
+}
+
+print.iobj <- function(o) {
+  cat(.Java(o$obj,"toString"),"\n")
+}
+
+ilines <- function(x,y) {
+  if (!inherits(.iplot.current,"iplot")) {
+    warning("There is no current plot")
+  } else {
+    pp<-iobj.new(.iplot.current,"PlotPolygon")
+    .Java(pp$obj,"set",as.numeric(x),as.numeric(y))
+    .Java(pp$obj,"update")
+  }
+}
+
