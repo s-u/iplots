@@ -1,7 +1,7 @@
 packageName <- "iplots"
 
 # iplots - interactive plots for R
-# Package version: 0.1-11
+# Package version: 0.1-12
 #
 # $Id$
 # (C)Copyright 2003 Simon Urbanek
@@ -12,9 +12,65 @@ packageName <- "iplots"
 # .iplot.curid   - current plot ID
 # .iplot.current - .iplots[[.iplot.curid]]
 
-# we need SJava for all the .Java commands (should we use "require"?)
-#library(SJava);
-library(rJava)
+# .iplots.env is the environment of this package
+assign(".iplots.env",environment())
+
+# we want to be compatible with both SJava and rJava.
+# first we look if rJava is present and SJava not already loaded,
+# in such case we use rJava. Otherwise we try to use SJava.
+if (length(.find.package("rJava",verbose=FALSE,quiet=TRUE))>0 &&
+    # the next one is a way to force the use of SJava even if rJava
+    # is installed by loading it in advance (mainly for debugging)
+    (("rJava" %in% .packages()) || !("SJava" %in% .packages()))
+    )
+{
+  library(rJava)
+  assign(".jbackend","rJava")
+} else {
+  # ok, use SJava. this is a bit tricky, since we need to implement
+  # a kind of rJava emulation by adding functions usually defined by rJava
+  library(SJava)
+
+  assign(".jinit", function(classpath=NULL) {
+    .JavaInit(list(classPath=classpath))
+  }, pos=.iplots.env)
+
+  
+  assign(".jnew", function(...) do.call(".jjnew",lapply(list(...), function(x) if (!is.null(x) && inherits(x,"jobjRef")) x$jobj else x)), pos=.iplots.env)
+  assign(".jjnew", function(class, ...) {
+    #cat(paste(".jnew(",class,",...)\n"))
+    a<-.JNew(gsub("/",".",class), ...)
+    if (!is.null(a) && inherits(a,"AnonymousOmegahatReference")) {
+      r<-list(jobj=a, jclass=gsub("\\.","/",a[["className"]]))
+      class(r)<-"jobjRef"
+      return(r)
+    }
+    a
+  }, pos=.iplots.env)
+
+  assign(".jcall", function(...) do.call(".jjcall",lapply(list(...), function(x) if (!is.null(x) && inherits(x,"jobjRef")) x$jobj else x)), pos=.iplots.env)
+  assign(".jstrVal", function(x) {
+    if (is.character(x)) return(x)
+    if (inherits(x,"jobjRef")) return(.jcall(x,"S","toString"))
+    if (inherits(x,"AnonymousOmegahatReference")) return(.Java(x,"toString"))
+    x }, pos=.iplots.env)
+  assign(".jevalArray", function(x) { x }, pos=.iplots.env)
+
+  assign(".jjcall", function(obj, returnSig="V", method, ..., evalArray=TRUE, evalString=TRUE) {
+    #cat(paste(".jcall(",obj,",",method,"...)\n"))
+    if (!evalArray || !evalString)
+      warning("rJava2SJava wrapper doesn't support evalArray=FALSE or evalString=FALSE")
+    a<-.Java(obj, method, ...)
+    if (!is.null(a) && inherits(a,"AnonymousOmegahatReference")) {
+      r<-list(jobj=a, jclass=gsub("\\.","/",a[["className"]]))
+      class(r)<-"jobjRef"
+      return(r)
+    }
+    a
+  }, pos=.iplots.env)
+  
+  assign(".jbackend","SJava")
+}
 
 # used objects
 #
@@ -62,6 +118,12 @@ library(rJava)
   .iset.selection<<-vector()
   .isets<<-list()
   .isets[[1]]<<-list()
+}
+
+# helpler function to identify a class in a strstr manner (not nice)
+.class.strstr <- function(o, class) {
+  if (!inherits(o, "jobjRef")) return(FALSE);
+  if (length(grep(class, o$jclass))>0) TRUE else FALSE
 }
 
 # iSet API
@@ -348,7 +410,7 @@ iplot.opt <- function(..., plot=iplot.cur()) {
 
 .iplot.getPar <- function(plot=.iplot.current) {
   p <- list()
-#  if (plot$obj[[2]]=="ScatterCanvas") {
+#  if (.class.strstr(plot$obj,"ScatterCanvas")) {
 #    p$xlim<-.Java(.Java(plot$obj,"getXAxis"),"getValueRange")
 #    p$ylim<-.Java(.Java(plot$obj,"getYAxis"),"getValueRange")
 #  }
@@ -391,6 +453,9 @@ iset.df <- function(df) { ndf<-list(); for(i in names(df)) { ndf[[i]]<-ivar.new(
 
 iset.select <- function(what, mode="replace", mark=TRUE) {
   m<-.jcall(.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","getCurrentSet"),"Lorg/rosuda/ibase/SMarker;","getMarker")
+  if (mode=="replace") iset.selectNone()
+  if (mode=="intersect")
+    error("I'm sorry, mode='intersect' is not yet supported in this version.")
   if (is.logical(what)) {
     for(i in 1:length(what)) { if (what[i]) .jcall(m,"V","set",as.integer(i-1),mark) }
   } else {
@@ -490,25 +555,17 @@ iobj.rm <- function(which=iobj.cur()) {
 }
 
 .iobj.opt.PlotText <- function(o,x=NULL,y=NULL,txt=NULL,ax=NULL,ay=NULL) {
-  if (!is.null(x) || !is.null(y) || !is.null(ax) || !is.null(ay)) {
+  if (!is.null(x) || !is.null(y)) {
     if (is.null(x)) x<-.jcall(o$obj,"[D","getX",evalArray=TRUE)
     if (is.null(y)) y<-.jcall(o$obj,"[D","getY",evalArray=TRUE)
-    if (length(x)==1) x<-c(x,x)
-    if (length(y)==1) y<-c(y,y)
-    if (is.null(ax) && is.null(ay))
-      .jcall(o$obj,"V","set",as.real(x),as.real(y))
-    else {
-      if (is.null(ax)) ax<-.jcall(o$obj,"[D","getAX",evalArray=TRUE)
-      if (is.null(ay)) ay<-.jcall(o$obj,"[D","getAY",evalArray=TRUE)
-      if (length(ax)==1) ax<-c(ax,ax)
-      if (length(ay)==1) ay<-c(ay,ay)
-      .jcall(o$obj,"V","set",as.real(x),as.real(y),as.real(ax),as.real(ay))
-    }
-  } else {
-    if (!is.null(txt)) {
-      if (length(txt)==1) txt<-c(txt,txt)
-      .jcall(o$obj,"V","set",as.character(txt))
-    }
+    .jcall(o$obj,"V","set",as.real(x),as.real(y))
+  }
+  if (!is.null(ax))
+    .jcall(o$obj,"V","setAX",as.real(ax))
+  if (!is.null(ay))
+    .jcall(o$obj,"V","setAY",as.real(ay))
+  if (!is.null(txt)) {
+    .jcall(o$obj,"V","set",as.character(txt))
   }
 }
 
@@ -542,8 +599,7 @@ iobj.opt <- function(o=iobj.cur(),...) {
 
 .iobj.opt.get <- function(o) {
   if (!is.null(o)) {
-    cl<-o$obj[[2]]
-    if (cl=="PlotText")
+    if (.class.strstr(o$obj, "PlotText"))
       .iobj.opt.get.PlotText(o)
   }
 }
@@ -559,9 +615,9 @@ iobj.opt <- function(o=iobj.cur(),...) {
   if (is.numeric(o)) o<-iobj.get(o)
   if (!is.null(layer)) .jcall(o$obj,"V","setLayer",as.integer(layer))
   if (length(list(...))>0) {
-    if (o$obj[[2]]=="PlotText")
+    if (.class.strstr(o$obj,"PlotText"))
       .iobj.opt.PlotText(o,...)
-    else if (o$obj[[2]]=="PlotPolygon")
+    else if (.class.strstr(o$obj,"PlotPolygon"))
       .iobj.opt.PlotPolygon(o,...)
     else
       .jcall(o$obj,"V","set",...)
