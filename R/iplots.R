@@ -19,11 +19,16 @@ library(SJava);
   cp<-paste(lib,pkg,"cont","iplots.jar",sep=.Platform$file.sep)
   .JavaInit(list(classPath=c(cp)))
   .iplots.fw<<-.JavaConstructor("Framework")
+  .iset.selection<<-vector()
 }
 
 # "Debug Initialize" - like .First.lib but for debugging purposes only
 # main use is to "source" this file and use .di() for initialization.
-.di <- function() { .JavaInit(list(classPath=".")); .iplots.fw<<-.JavaConstructor("Framework") }
+.di <- function() {
+  .JavaInit(list(classPath=".")) # debug version uses "." as classpath
+  .iplots.fw<<-.JavaConstructor("Framework")
+  .iset.selection<<-vector()
+}
 
 # create a new variable (undocunmented!)
 ivar.new <- function (name,cont) {
@@ -90,7 +95,7 @@ print.iplot <- function(p) { cat("ID:",p$id," Name: \"",attr(p,"iname"),"\"\n",s
 
 .iplot.iPlot <- function (x,y,...) {
   a<-iplot.new(.Java(.iplots.fw,"newScatterplot",x,y))
-  iplot.par(...,plot=a)
+  iplot.opt(...,plot=a)
 }
 
 .iplot.iHist <- function (v1) { iplot.new(lastPlot<-.Java(.iplots.fw,"newHistogram",v1)) }
@@ -184,9 +189,10 @@ iset.select <- function(what, mode="replace", mark=TRUE) {
 iset.selected <- function() {
   v<-vector()
   m<-.Java(.Java(.iplots.fw,"getCurrentSet"),"getMarker")
-  numc<-.Java(m,"size")
-  for(i in 1:numc) { if(.Java(m,"get",as.integer(i-1))<0) v<-c(v,i) }
-  v;
+  .Java(m,"getSelectedIDs")+1
+#  numc<-.Java(m,"size")
+#  for(i in 1:numc) { if(.Java(m,"get",as.integer(i-1))<0) v<-c(v,i) }
+#  v;
 }
 
 iset.selectAll <- function() { .Java(.Java(.Java(.iplots.fw,"getCurrentSet"),"getMarker"),"selectAll",as.integer(1)); .Java(.iplots.fw,"updateMarker"); }
@@ -272,11 +278,13 @@ iobj.rm <- function(obj) {
   rm(obj)
 }
 
-iobj.opt <- function(o=iobj.cur(),...,col=NULL, fill=NULL, layer=NULL) {
+iobj.opt <- function(o=iobj.cur(),...,col=NULL, fill=NULL, layer=NULL, reg=NULL, visible=NULL) {
   if (is.numeric(o)) o<-iobj.get(o)
   if (!is.null(layer)) .Java(o$obj,"setLayer",as.integer(layer))
   if (length(list(...))>0) .Java(o$obj,"set",...)
   if (!is.null(col)|| !is.null(fill)) .iobj.color(o,col,fill)
+  if (!is.null(reg)) .iabline.set(o,reg=reg)
+  if (!is.null(visible)) .Java(o$obj,"setVisible",visible);
   .Java(o$obj,"update")
   # dirty temporary fix
   .Java(.iplot.current$obj,"forcedFlush")
@@ -311,21 +319,23 @@ print.iobj <- function(o) {
   cat(.Java(o$obj,"toString"),"\n")
 }
 
-ilines <- function(x,y,col=NULL,fill=NULL) {
+ilines <- function(x,y,col=NULL,fill=NULL,visible=NULL) {
   if (!inherits(.iplot.current,"iplot")) {
     stop("There is no current plot")
   } else {
     pp<-iobj.new(.iplot.current,"PlotPolygon")
     .Java(pp$obj,"set",as.numeric(x),as.numeric(y))
     if (!is.null(col) || !is.null(fill))
-      iobj.color(pp,col,fill) # includes "update"
+      .iobj.color(pp,col,fill) # includes "update"
     else
       .Java(pp$obj,"update")
+    if (!is.null(visible))
+      .Java(pp$obj,"setVisible",visible)
     pp
   }
 }
 
-iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ...) {
+.iabline.AB <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ...) {
   if (!is.null(reg)) a<-reg
   if (!is.null(a) && is.list(a)) {
     t <- as.vector(coefficients(a))
@@ -341,6 +351,13 @@ iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ...) {
     a <- coef[1]
     b <- coef[2]
   }
+  list(a=a,b=b)
+}
+
+iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ...) {
+  l<-.iabline.AB(a,b,reg,coef)
+  a<-l$a
+  b<-l$b
   if (is.null(.iplot.current) || !inherits(.iplot.current,"iplot")) {
     stop("There is no current plot")
   } else {
@@ -356,7 +373,59 @@ iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ...) {
   }
 }
 
+.iabline.set <- function(...,obj=iobj.cur()) {
+  l<-.iabline.AB(...)
+  a<-l$a
+  b<-l$b
+  plot<-obj$plot;
+  ax<-.Java(.iplot.current$obj,"getXAxis")
+  if (is.null(ax)) {
+    stop("The plot has no X axis")
+  } else {
+    r<-.Java(ax,"getValueRange")
+    mi<-min(r)
+    mx<-max(r)
+    iobj.opt(obj,c(mi,mx),c(a+b*mi,a+b*mx))
+  }
+}
+
+ievent.wait <- function() {
+  mid<-.Java(.iplots.fw,"eventWait")
+  if (is.null(mid) || mid==0) return(NULL);
+  return(mid)
+}
+
+iset.sel.changed <- function (iset=iset.cur(),...) {
+  a <- iset.selected()
+  if (length(a)!=length(.iset.selection))
+    b <- TRUE
+  else
+    b <- !(sum(a==.iset.selection)==length(a)) # this is stupid, but works :P
+  if (b) .iset.selection <<- a
+  b
+}
+
+#------ DEBUG/TEST code
+
 .db <- function() {
   iplot(rnorm(200),rnorm(200))
   ilines(1:200/200*6-3,dnorm(1:200/200*6-3)*4)
+}
+
+# event loop demo from DSC-2003 iPlots paper
+.a <- function() {
+  x<-rnorm(100)
+  y<-rnorm(100)
+  iplot(x, y)
+  iabline(lm(y ~ x), col="black")
+  iabline(0, 0, col="marked", visible=FALSE)
+  while (!is.null(ievent.wait())) {
+    if (iset.sel.changed()) {
+      s <- iset.selected()
+      if (length(s)>0)
+        iobj.opt(reg=lm(y[s] ~ x[s]), visible=TRUE)
+      else
+        iobj.opt(visible=FALSE)
+    }
+  }
 }
