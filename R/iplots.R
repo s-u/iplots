@@ -21,10 +21,16 @@ library(SJava);
     Sys.putenv("DYLD_LIBRARY_PATH"=sub("/usr/X11R6/lib","",dlp))
   cp<-paste(lib,pkg,"cont","iplots.jar",sep=.Platform$file.sep)
   .JavaInit(list(classPath=c(cp)))
+  if ((exists(".iplots") && length(.iplots)>0))
+    warning("iPlots currently don't support saving of sessions. Data belonging to iPlots from your previous session will be discarded.")
   .iplots.fw<<-.JavaConstructor("Framework")
+  # we need to reset everything for sanity reasons
   .iset.selection<<-vector()
   .isets<<-list()
   .isets[[1]]<<-list()
+  .iplots<<-list()
+  .iplot.curid<<-1
+  .iplot.current<<-NULL
 }
 
 # "Debug Initialize" - like .First.lib but for debugging purposes only
@@ -118,21 +124,42 @@ iset.new <- function(name=NULL) {
 
 # create a new variable (undocunmented!)
 ivar.new <- function (name,cont) {
-  if(is.factor(cont)) {
-    v<-.Java(.iplots.fw,"newVar",name,as.character(cont))
-    if (v>=0) {
-      .Java(.Java(.iplots.fw,"getVar",v),"categorize",TRUE)
+  if (!is.character(name) || length(name)>1)
+    stop("variable name must be a single string")
+  if(is.factor(cont) || is.character(cont)) {
+    id<-.Java(.iplots.fw,"newVar",name,as.character(cont))
+    if (id==-2) stop("Operation canceled by user.")
+    if (id==-3) {
+      iset.new()
+      id<-.Java(.iplots.fw,"newVar",name,as.character(cont))
     }
+    if (id>=0) {
+      .Java(.Java(.iplots.fw,"getVar",id),"categorize",TRUE)
+      v<-list(vid=id,name=name,obj=.Java(.iplots.fw,"getVar",id))
+      class(v)<-"ivar"
+      return(v)
+    }
+    return (NULL)
+  }
+  id<-.Java(.iplots.fw,"newVar",name,cont)
+  if (id==-2) stop("Operation canceled by user.")
+  if (id==-3) {
+    iset.new()
+    id<-.Java(.iplots.fw,"newVar",name,as.character(cont))
+  }
+  if (id>=0) {
+    v<-list(vid=id,name=name,obj=.Java(.iplots.fw,"getVar",id))
+    class(v)<-"ivar"
     return(v)
   }
-  .Java(.iplots.fw,"newVar",name,cont)
+  return(NULL);
 }
 
 # update contents of an existing variable (undocumented!)
-ivar.update <- function (vid,cont) { .Java(.iplots.fw,"replaceVar",vid,cont); .Java(.iplots.fw,"updateVars"); }
+#ivar.update <- function (var,cont) {
+#  .Java(.iplots.fw,"replaceVar",vid,cont); .Java(.iplots.fw,"updateVars");
+#}
 
-# return contents of a variable (alias for iset.var)
-ivar <- function (vid) { iset.var(vid) }
 
 #============================
 # iplot management functions
@@ -204,29 +231,56 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
 .iplot.setYaxis <- function(ipl,x1,x2) { .Java(.Java(ipl,"getYAxis"),"setValueRange",x1,x2-x1); }
 
 .iplot.iPlot <- function (x,y,...) {
-  a<-iplot.new(.Java(.iplots.fw,"newScatterplot",x,y))
+  a<-iplot.new(.Java(.iplots.fw,"newScatterplot",x$vid,y$vid))
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
 }
 
 .iplot.iHist <- function (var, ...) {
-  a<-iplot.new(lastPlot<-.Java(.iplots.fw,"newHistogram",var))
+  a<-iplot.new(lastPlot<-.Java(.iplots.fw,"newHistogram",var$vid))
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
 }
 
 .iplot.iBar  <- function (var, ...) {
-  a<-iplot.new(lastPlot<-.Java(.iplots.fw,"newBarchart",var))
+  a<-iplot.new(lastPlot<-.Java(.iplots.fw,"newBarchart",var$vid))
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
 }
 
+ivar.data <- function(var) {
+  if (!inherits(var,"ivar"))
+    stop("parameter is not an iVariable.")
+  vid<-as.integer(var$id)
+  if(.Java(.iplots.fw,"varIsNum",vid)!=0) .Java(.iplots.fw,"getDoubleContent",vid) else as.factor(.Java(.iplots.fw,"getStringContent",vid))
+}
+
 # user-level plot calls
 
-iplot <- function(x,y,...) {
-   if ((is.vector(x) || is.factor(x)) && length(x)>1) x<-ivar.new(.Java(.iplots.fw,"getNewTmpVar",as.character(deparse(substitute(x)))),x)
-   if ((is.vector(y) || is.factor(y)) && length(y)>1) y<-ivar.new(.Java(.iplots.fw,"getNewTmpVar",as.character(deparse(substitute(y)))),y)
-   .iplot.iPlot(x,y,...)
+iplot <- function(x,y=NULL,...) {
+  lx<-length(x)
+  ry<-y
+  ny<-deparse(substitute(y))
+  nx<-deparse(substitute(x))
+  if (inherits(x,"ivar")) lx<-.Java(x$obj,"size")
+  if (lx<2)
+    stop("iplot coordinates must specify at least two points")
+  if (!inherits(y,"ivar") && length(y)==1) ry<-rep(y,lx)
+  if (is.null(y)) {
+    ny<-"index"
+    ry<-1:lx
+  }
+  ly<-length(ry)
+  if (inherits(y,"ivar")) ly<-.Java(y$obj,"size")
+  if (lx!=ly)
+    stop("Incompatible vector lengths. Both vectors x and y must be of the same length.")
+
+  print(.Java(.iplots.fw,"getNewTmpVar",as.character(nx)))
+  if ((is.vector(x) || is.factor(x)) && length(x)>1) x<-ivar.new(as.character(.Java(.iplots.fw,"getNewTmpVar",as.character(nx))),x)
+  if ((is.vector(ry) || is.factor(ry)) && length(ry)>1) y<-ivar.new(as.character(.Java(.iplots.fw,"getNewTmpVar",as.character(ny))),ry)
+  if (is.null(x)) stop("Invalid X variable")
+  if (is.null(y)) stop("Invalid Y variable")
+  .iplot.iPlot(x,y,...)
 }
 
 ibar <- function(var, ...) {
@@ -345,11 +399,6 @@ iset.brush <- function(col) {
 #** iset.cols(): return colors
 
 iset.updateVars <- function() { .Java(.iplots.fw,"updateVars"); }
-
-iset.var <- function(vid) {
-  vid<-as.integer(vid)
-  if(.Java(.iplots.fw,"varIsNum",vid)!=0) .Java(.iplots.fw,"getDoubleContent",vid) else as.factor(.Java(.iplots.fw,"getStringContent",vid))
-}
 
 # iobj API
 
@@ -627,6 +676,10 @@ iset.sel.changed <- function (iset=iset.cur()) {
     b <- !(sum(a==.iset.selection)==length(a)) # this is stupid, but works :P
   if (b) .iset.selection <<- a
   b
+}
+
+.iDebug <- function(level=1) {
+  .Java(.iplots.fw,"setDebugLevel",as.integer(level))
 }
 
 #------ DEBUG/TEST code
