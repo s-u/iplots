@@ -115,7 +115,7 @@ ihist <- function(v1) {
    .iplot.iHist(v1)
 }
 
-iplot.par <- function(xlim=NULL, ylim=NULL, col=NULL, plot=.iplot.current) {
+iplot.opt <- function(xlim=NULL, ylim=NULL, col=NULL, plot=.iplot.current) {
   if (!is.null(xlim)) .iplot.setXaxis(plot$obj,xlim[1],xlim[2])
   if (!is.null(ylim)) .iplot.setYaxis(plot$obj,ylim[1],ylim[2])
   if (!is.null(col)) iset.brush(col)
@@ -128,13 +128,37 @@ iplot.par <- function(xlim=NULL, ylim=NULL, col=NULL, plot=.iplot.current) {
   .Java(plot$obj,"forcedFlush");
 }
 
-iplot.getPar <- function(plot=.iplot.current) {
+.iplot.getPar <- function(plot=.iplot.current) {
   p <- list()
   if (plot$obj[[2]]=="ScatterCanvas") {
     p$xlim<-.Java(.Java(plot$obj,"getXAxis"),"getValueRange")
     p$ylim<-.Java(.Java(plot$obj,"getYAxis"),"getValueRange")
   }
   p
+}
+
+iplot.data <- function(id=NULL) {
+  if (!is.null(id)) {
+    v<-.Java(.iplot.current$obj,"getData",as.integer(id-1))
+    if (!is.null(v)) {
+      if(.Java(.iplots.fw,"varIsNum",v)!=0)
+        .Java(.iplots.fw,"getDoubleContent",v)
+      else
+        as.factor(.Java(.iplots.fw,"getStringContent",v))
+    } else {
+      NULL
+    }
+  } else {
+    i<-1
+    l<-list()
+    while (!is.null(a<-iplot.data(i))) {
+      l[[i]]<-a
+      if (i==1) names(l)<-"x"
+      if (i==2) names(l)<-c("x","y")
+      i<-i+1
+    }
+    l
+  }
 }
 
 # old API functions
@@ -147,7 +171,7 @@ iset.df <- function(df) { ndf<-list(); for(i in names(df)) { ndf[[i]]<-ivar.new(
 
 # selection/highlighting API
 
-iset.select <- function(what,mark=TRUE) {
+iset.select <- function(what, mode="replace", mark=TRUE) {
   m<-.Java(.Java(.iplots.fw,"getCurrentSet"),"getMarker")
   if (is.logical(what)) {
     for(i in 1:length(what)) { if (what[i]) .Java(m,"set",as.integer(i-1),mark) }
@@ -170,6 +194,7 @@ iset.selectNone <- function() { .Java(.Java(.Java(.iplots.fw,"getCurrentSet"),"g
 
 # brushing API
 
+# in paper: iset.color(color, what=iset.selected())
 iset.brush <- function(col) {
   if (is.numeric(col) && !is.integer(col)) col<-as.integer(col)
   if (is.factor(col)) col<-as.integer(as.integer(col)+1)
@@ -177,6 +202,8 @@ iset.brush <- function(col) {
   # dirty temporary fix
   .Java(.iplot.current$obj,"forcedFlush");
 }
+
+#** iset.cols(): return colors
 
 iset.updateVars <- function() { .Java(.iplots.fw,"updateVars"); }
 
@@ -245,19 +272,36 @@ iobj.rm <- function(obj) {
   rm(obj)
 }
 
-iobj.set <- function(o=iobj.cur(),...,layer=NULL) {
+iobj.opt <- function(o=iobj.cur(),...,col=NULL, fill=NULL, layer=NULL) {
   if (is.numeric(o)) o<-iobj.get(o)
   if (!is.null(layer)) .Java(o$obj,"setLayer",as.integer(layer))
   if (length(list(...))>0) .Java(o$obj,"set",...)
+  if (!is.null(col)|| !is.null(fill)) .iobj.color(o,col,fill)
   .Java(o$obj,"update")
   # dirty temporary fix
-  .Java(.iplot.current$obj,"forcedFlush");
+  .Java(.iplot.current$obj,"forcedFlush")
 }
 
-iobj.color <- function(obj=iobj.cur(), col=NULL, fill=NULL) {
+iobj.set <- function(obj) {
+  if (is.numeric(obj)) obj<-iobj.get(obj)
+  if (is.null(obj)) stop("opject doesn't exist")
+  .Java(obj$pm,"setCurrentObject",obj$obj);
+}
+
+.iobj.color <- function(obj=iobj.cur(), col=NULL, fill=NULL) {
   if (is.numeric(obj)) obj<-iobj.get(as.integer(obj))
-  if (!is.null(col)) .Java(obj$obj,"setDrawColor",.JavaConstructor("PlotColor",col))
-  if (!is.null(fill)) .Java(obj$obj,"setFillColor",.JavaConstructor("PlotColor",fill))
+  if (!is.null(col))
+    if (is.na(col))
+      .Java(obj$obj,"setDrawColor",NULL)
+    else
+      .Java(obj$obj,"setDrawColor",.JavaConstructor("PlotColor",col))
+
+  if (!is.null(fill))
+    if (is.na(fill))
+      .Java(obj$obj,"setFillColor",NULL)
+    else
+      .Java(obj$obj,"setFillColor",.JavaConstructor("PlotColor",fill))      
+  
   .Java(obj$obj,"update")
   # dirty temporary fix
   .Java(.iplot.current$obj,"forcedFlush");
@@ -269,7 +313,7 @@ print.iobj <- function(o) {
 
 ilines <- function(x,y,col=NULL,fill=NULL) {
   if (!inherits(.iplot.current,"iplot")) {
-    warning("There is no current plot")
+    stop("There is no current plot")
   } else {
     pp<-iobj.new(.iplot.current,"PlotPolygon")
     .Java(pp$obj,"set",as.numeric(x),as.numeric(y))
@@ -281,3 +325,38 @@ ilines <- function(x,y,col=NULL,fill=NULL) {
   }
 }
 
+iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ...) {
+  if (!is.null(reg)) a<-reg
+  if (!is.null(a) && is.list(a)) {
+    t <- as.vector(coefficients(a))
+    if (length(t) == 1) {
+      a<-0
+      b<-t
+    } else {
+      a<-t[1]
+      b<-t[2]
+    }
+  }
+  if (!is.null(coef)) {
+    a <- coef[1]
+    b <- coef[2]
+  }
+  if (is.null(.iplot.current) || !inherits(.iplot.current,"iplot")) {
+    stop("There is no current plot")
+  } else {
+    ax<-.Java(.iplot.current$obj,"getXAxis")
+    if (is.null(ax)) {
+      stop("The plot has no X axis")
+    } else {
+      r<-.Java(ax,"getValueRange")
+      mi<-min(r)
+      mx<-max(r)
+      ilines(c(mi,mx),c(a+b*mi,a+b*mx),...)
+    }
+  }
+}
+
+.db <- function() {
+  iplot(rnorm(200),rnorm(200))
+  ilines(1:200/200*6-3,dnorm(1:200/200*6-3)*4)
+}
