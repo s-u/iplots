@@ -1,7 +1,7 @@
 packageName <- "iplots"
 
 # iplots - interactive plots for R
-# Package version: 0.1-8x
+# Package version: 0.1-11
 #
 # $Id$
 # (C)Copyright 2003 Simon Urbanek
@@ -15,6 +15,20 @@ packageName <- "iplots"
 # we need SJava for all the .Java commands (should we use "require"?)
 #library(SJava);
 library(rJava)
+
+# used objects
+#
+# ivar
+# vid (int), name (char), obj (jobjRef [SVar])
+#
+# iplot
+# id (int), iname (char), obj (jobjRef)
+#
+# from rJava:
+#
+# jobjRef
+# jobj (int), jclass (char)
+#
 
 # library initialization: Add "<iplots>/cont/iplots.jar" to classpath,
 # initialize Java and create an instance on the Framework "glue" class
@@ -283,7 +297,7 @@ iplot <- function(x,y=NULL,...) {
   if (lx!=ly)
     stop("Incompatible vector lengths. Both vectors x and y must be of the same length.")
 
-  print(.jstrVal(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(nx))))
+  #print(.jstrVal(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(nx))))
   if ((is.vector(x) || is.factor(x)) && length(x)>1) x<-ivar.new(as.character(.jstrVal(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(nx)))),x)
   if ((is.vector(ry) || is.factor(ry)) && length(ry)>1) y<-ivar.new(as.character(.jstrVal(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(ny)))),ry)
   if (is.null(x)) stop("Invalid X variable")
@@ -323,7 +337,7 @@ iplot.opt <- function(..., plot=iplot.cur()) {
   if (!is.null(ylim)) .iplot.setYaxis(plot$obj,ylim[1],ylim[2])
   if (!is.null(col)) iset.brush(col)
   if (!(is.null(xlim) && is.null(ylim))) {
-    if (plot$obj[[2]]=="ScatterCanvas") .jcall(plot$obj,"V","updatePoints")
+    if (plot$obj$jclass=="org/rosuda/ibase/plots/ScatterCanvas") .jcall(plot$obj,"V","updatePoints")
     .jcall(plot$obj,"V","setUpdateRoot",as.integer(0))
     .jcall(plot$obj,"V","repaint")
   }
@@ -346,7 +360,7 @@ iplot.data <- function(id=NULL) {
     v<-.jcall(.iplot.current$obj,"Lorg/rosuda/ibase/SVar;","getData",as.integer(id-1))
     if (!is.null(v)) {
       if(.jcall(.iplots.fw,"I","varIsNum",v)!=0)
-        .jcall(.iplots.fw,"[D","getDoubleContent",v)
+        .jcall(.iplots.fw,"[D","getDoubleContent",v,evalArray=TRUE)
       else
         as.factor(.jcall(.iplots.fw,"[S","getStringContent",v))
     } else {
@@ -417,7 +431,7 @@ iset.updateVars <- function() { .jcall(.iplots.fw,"V","updateVars"); }
 # internal function - creates a new object of the Java-class <type>
 .iobj.new <- function(plot, type) {
   pm<-.jcall(plot$obj,"Lorg/rosuda/ibase/toolkit/PlotManager;","getPlotManager")
-  a<-list(obj=.jnew(type,pm),pm=pm,plot=plot)
+  a<-list(obj=.jnew(paste("org/rosuda/ibase/toolkit",type,sep="/"),pm),pm=pm,plot=plot)
   class(a)<-"iobj"
   plot$curobj<-a
   # dirty temporary fix
@@ -581,13 +595,13 @@ iobj.set <- function(which) {
     if (is.na(col))
       .jcall(obj$obj,"V","setDrawColor",NULL)
     else
-      .jcall(obj$obj,"V","setDrawColor",.jnew("PlotColor",col))
+      .jcall(obj$obj,"V","setDrawColor",.jnew("org/rosuda/ibase/toolkit/PlotColor",col))
 
   if (!is.null(fill))
     if (is.na(fill))
       .jcall(obj$obj,"V","setFillColor",NULL)
     else
-      .jcall(obj$obj,"V","setFillColor",.jnew("PlotColor",fill))      
+      .jcall(obj$obj,"V","setFillColor",.jnew("org/rosuda/ibase/toolkit/PlotColor",fill))      
   
   .jcall(obj$obj,"V","update")
   # dirty temporary fix
