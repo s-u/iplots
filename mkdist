@@ -6,14 +6,37 @@ rm -rf /tmp/iplots
 echo "Copying package base ..."
 cp -r ../iplots /tmp
 
+rm -rf /tmp/iplots.java
 mkdir /tmp/iplots.java
-echo "Copying sources ..."
-if [ ! -e ../../../java/stat/klimt/src/inTr.java ]; then
-   echo "Can't find sources! Check out both R and java modules!"
+echo "Using compiled jar ..."
+if [ -e /Work/builds ]; then
+   BUILDIR=/Work/builds
+fi
+if [ -e /Builds ]; then
+   BUILDIR=/Builds
+fi
+echo "Build directory: ${BUILDIR}/Klimt.app"
+if [ ! -e ${BUILDIR}/Klimt.app/Contents/Resources/Java/Klimt.jar ]; then
+   echo "Sorry, but currently I don't know how to re-build Java sources."
+   echo "Please compile the framework with Project Builder (Klimt.app in /Work/builds)"
    exit 1
 fi
-cp ../../../java/stat/klimt/src/*.java /tmp/iplots.java
-cp ../../../java/stat/klimt/iPlots.jpg /tmp/iplots.java/splash.jpg
+
+#echo "Copying sources ..."
+#if [ ! -e ../../../org/rosuda/iplots/Framework.java ]; then
+#   echo "Can't find sources! Check out both R and org/rosuda modules!"
+#   exit 1
+#fi
+#find ../../../org/rosuda name \*.java -exec cp \{\} /tmp/iplots.java/ \;
+
+#cp ../../../java/stat/klimt/src/*.java /tmp/iplots.java
+
+cp ../../../java/stat/klimt/iPlots.jpg /tmp/iplots.java/iPlots.jpg
+cp ../../../org/rosuda/ibase/Common.java /tmp/iplots.java/Common.java
+cd /tmp/iplots.java
+jar fx ${BUILDIR}/Klimt.app/Contents/Resources/Java/Klimt.jar
+mv iPlots.jpg splash.jpg
+
 rm /tmp/iplots/mkdist
 
 cd /tmp/iplots
@@ -21,22 +44,25 @@ VER=`awk -v ORS= '/Package version:/ { print $4 }' R/iplots.R`
 echo "iplots version ${VER}"
 
 cd /tmp/iplots.java
-echo Removing plugins and wrappers ...
-rm -f PluginDeriveVar.java PluginGetTreeR.java PluginStartRserve.java PoGraSSSVG.java tfw.java Wrapper.java StaticReader.java PGSviewer.java
+#echo Removing plugins and wrappers ...
+#rm -f PluginDeriveVar.java PluginGetTreeR.java PluginStartRserve.java PoGraSSSVG.java tfw.java Wrapper.java StaticReader.java PGSviewer.java
 
 if [ `uname` != "Darwin" ]; then
     echo "Non-Mac platform. MacOS (MRJ) support will NOT be compiled."
-    rm -f PlatformMac.java
+    rm -f org/rosuda/klimt/PlatformMac.java
+    rm -f org/rosuda/util/PlatformMac.java
 fi
 
 # adjust version number
+echo "Adjust version number and re-compile Common.java ..."
 cat Common.java | sed "s/Version=\"[0-9]*.[0-9]*\"/Version=\"${VER}\"/" > c
 rm Common.java
-mv c Common.java
-echo Compiling sources ...
-javac -O *.java
+mv c org/rosuda/ibase/Common.java
+javac org/rosuda/ibase/Common.java
+#echo Compiling sources ...
+#javac -O *.java
 echo Creating archive ...
-jar fc iplots.jar *.class splash.jpg
+jar fc iplots.jar org splash.jpg
 
 echo "Copying java archive ..."
 mkdir -p /tmp/iplots/inst/cont
@@ -57,6 +83,6 @@ cd ..
 tar fcz iplots_${VER}.tar.gz iplots
 cd ${SWD}
 mv /tmp/iplots_${VER}.tar.gz ..
-rm -rf /tmp/iplots /tmp/iplots.java
+#rm -rf /tmp/iplots /tmp/iplots.java
 echo "Done."
 ls -l ../iplots_${VER}.tar.gz
