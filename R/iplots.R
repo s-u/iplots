@@ -132,6 +132,8 @@ ivar.new <- function (name,cont) {
     if (id==-3) {
       iset.new()
       id<-.Java(.iplots.fw,"newVar",name,as.character(cont))
+      if (id<0)
+        stop("Unable to create an iVariable");
     }
     if (id>=0) {
       .Java(.Java(.iplots.fw,"getVar",id),"categorize",TRUE)
@@ -145,7 +147,9 @@ ivar.new <- function (name,cont) {
   if (id==-2) stop("Operation canceled by user.")
   if (id==-3) {
     iset.new()
-    id<-.Java(.iplots.fw,"newVar",name,as.character(cont))
+    id<-.Java(.iplots.fw,"newVar",name,cont)
+    if (id<0)
+      stop("Unable to create an iVariable");
   }
   if (id>=0) {
     v<-list(vid=id,name=name,obj=.Java(.iplots.fw,"getVar",id))
@@ -284,11 +288,19 @@ iplot <- function(x,y=NULL,...) {
 }
 
 ibar <- function(var, ...) {
+  len<-length(var)
+  if (inherits(x,"ivar")) len<-.Java(x$obj,"size")
+  if (len<2)
+    stop("ibar requires at least two data points")
    if ((is.vector(var) || is.factor(var)) && length(var)>1) var<-ivar.new(.Java(.iplots.fw,"getNewTmpVar",as.character(deparse(substitute(var)))),var);
    .iplot.iBar(var, ...)
 }
 
 ihist <- function(var, ...) {
+  len<-length(var)
+  if (inherits(x,"ivar")) len<-.Java(x$obj,"size")
+  if (len<2)
+    stop("ihist requires at least two data points")
    if ((is.vector(var) || is.factor(var)) && length(var)>1) var<-ivar.new(.Java(.iplots.fw,"getNewTmpVar",as.character(deparse(substitute(var)))),var);
    .iplot.iHist(var, ...)
 }
