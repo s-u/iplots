@@ -380,7 +380,7 @@ ibar <- function(var, ...) {
   if (inherits(var,"ivar")) len<-.jcall(var$obj,"I","size")
   if (len<2)
     stop("ibar requires at least two data points")
-   if ((is.vector(var) || is.factor(var)) && length(var)>1) var<-ivar.new(.jstrVal(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(deparse(substitute(var))))),var);
+   if ((is.vector(var) || is.factor(var)) && length(var)>1) var<-ivar.new(.jstrVal(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(deparse(substitute(var))))),as.factor(var));
    .iplot.iBar(var, ...)
 }
 
@@ -397,7 +397,6 @@ ihammock <- function(vars, ...) {
   vv<-vector()
   for (var in vars) {
     var<-as.factor(var)
-    str(var)
     if (length(var) > 1) {
       var <- ivar.new(.jcall(.iplots.fw, "S", "getNewTmpVar", 
                              "hammock."), var)
