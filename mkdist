@@ -31,7 +31,7 @@ fi
 
 #cp ../../../java/stat/klimt/src/*.java /tmp/iplots.java
 
-cp ../../../java/stat/klimt/iPlots.jpg /tmp/iplots.java/iPlots.jpg
+cp ../../../org/rosuda/iplots/iPlots.jpg /tmp/iplots.java/iPlots.jpg
 cp ../../../org/rosuda/ibase/Common.java /tmp/iplots.java/Common.java
 cd /tmp/iplots.java
 jar fx ${BUILDIR}/Klimt.app/Contents/Resources/Java/Klimt.jar
