@@ -82,7 +82,7 @@ echo "Creating package ..."
 cd ..
 tar fcz iplots_${VER}.tar.gz iplots
 cd ${SWD}
-mv /tmp/iplots_${VER}.tar.gz ..
-#rm -rf /tmp/iplots /tmp/iplots.java
+cp /tmp/iplots_${VER}.tar.gz ..
+rm -rf /tmp/iplots /tmp/iplots.java
 echo "Done."
 ls -l ../iplots_${VER}.tar.gz
