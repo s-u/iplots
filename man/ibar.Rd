@@ -1,26 +1,29 @@
 \name{ibar}
 \alias{ibar}
 \title{
-Interactive Bar Chart
+  Interactive Bar Chart
 }
 \description{
-This function creates a new bar chart from the given data.
+  This function creates a new interactive bar chart from the given data.
 }
 \usage{
-ibar(var,\ldots)
+ibar(var, ...)
 }
 \arguments{
-\item{var}{Factor, vector of strings or variable to use.}
+  \item{var}{Factor, vector of strings or variable to use.}
+  \item{...}{All additional parameters are passed to
+    \code{\link{iplot.opt}}.}
 }
 \value{
-Resulting plot object.
+  Resulting plot object.
 }
 \seealso{
-\code{\link{iplot}}, \code{\link{ihist}}, \code{\link{iplot.list}}
+  \code{\link{iplot}}, \code{\link{ihist}}, \code{\link{iplot.list}},
+  \code{\link{iplot.opt}}
 }
 \examples{
 data(iris)
 attach(iris)
 ibar(Species)
 }
-\keyword{interactive bar chart}
+\keyword{hplot}

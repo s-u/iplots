@@ -4,6 +4,7 @@
 \alias{iplot.next}
 \alias{iplot.prev}
 \alias{iplot.cur}
+\alias{iplot.off}
 \title{
 Interactive plots management functions.
 }
@@ -23,6 +24,8 @@ Interactive plots management functions.
   specified by the argument.
   
   \code{\link{iplot.set}} makes the plot with the specified ID current.
+  
+  \code{\link{iplot.off}} closes the plot. 
 }
 \usage{
 iplot.list()
@@ -30,6 +33,7 @@ iplot.cur()
 iplot.next(which=iplot.cur())
 iplot.prev(which=iplot.cur())
 iplot.set(which=iplot.next())
+iplot.off()
 }
 \arguments{
 \item{which}{An integer specifying a plot number.}
@@ -44,4 +48,5 @@ iplot(Sepal.Width,Petal.Width)
 ibar(Species)
 iplot.list()
 }
-\keyword{interactive plot management, current plot}
+\keyword{iplot}
+
