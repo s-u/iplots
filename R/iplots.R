@@ -66,6 +66,30 @@ iplot.list <- function () {
   if (exists(".iplots")) .iplots else list()
 }
 
+.iplot.close <- function(plot) {
+  .Java(.Java(plot$obj,"getFrame"),"dispose")
+}
+
+iplot.off <- function(plot=iplot.cur()) {
+  if (length(.iplots)==0) return()
+
+  j<-list()
+  k <- 1
+  for (i in 1:length(.iplots))
+    if (i!=plot) {
+      j[[k]]<-.iplots[[i]]
+      k<-k+1
+    } else
+      .iplot.close(.iplots[[i]])
+  .iplots <<- j
+  if (length(j)==0) {
+    .iplot.current<<-NULL
+    .iplot.curid<<-0
+  } else
+    iplot.set(iplot.prev())
+  invisible()
+}
+
 # this function should not be called directly by the user
 # is creates a new R iplot-object for an existing Java plot object
 iplot.new <- function (plotObj) {
@@ -301,13 +325,16 @@ iobj.rm <- function(obj) {
   }
 }
 
-itext <- function(x, y=NULL, labels=seq(along=x), ax=NULL, ay=NULL) {
+itext <- function(x, y=NULL, labels=seq(along=x), ax=NULL, ay=NULL, ...) {
   if (!inherits(.iplot.current,"iplot")) {
     stop("There is no current plot")
   } else {
     pt<-iobj.new(.iplot.current,"PlotText")
     c<-xy.coords(x,y,recycle=TRUE)
     iobj.opt(pt,x=c$x,y=c$y,ax=ax,ay=ay,txt=labels)
+    if (length(list(...))>0)
+      iobj.opt(pt,...)
+    pt
   }
 }
 
@@ -332,7 +359,7 @@ iobj.opt <- function(o=iobj.cur(),...) {
   }
 }
 
-.iobj.opt <- function(o=iobj.cur(),...,col=NULL, fill=NULL, layer=NULL, reg=NULL, visible=NULL) {
+.iobj.opt <- function(o=iobj.cur(),...,col=NULL, fill=NULL, layer=NULL, reg=NULL, visible=NULL, coord=NULL, update=TRUE, a=NULL, b=NULL) {
   if (is.numeric(o)) o<-iobj.get(o)
   if (!is.null(layer)) .Java(o$obj,"setLayer",as.integer(layer))
   if (length(list(...))>0) {
@@ -342,11 +369,19 @@ iobj.opt <- function(o=iobj.cur(),...) {
       .Java(o$obj,"set",...)
   }
   if (!is.null(col)|| !is.null(fill)) .iobj.color(o,col,fill)
-  if (!is.null(reg)) .iabline.set(o,reg=reg)
+  if (!is.null(reg)||!is.null(a)||!is.null(b)) .iabline.set(a=a,b=b,reg=reg,obj=o)
   if (!is.null(visible)) .Java(o$obj,"setVisible",visible);
-  .Java(o$obj,"update")
-  # dirty temporary fix
-  .Java(.iplot.current$obj,"forcedFlush")
+  if (!is.null(coord) && length(coord)>0) {
+    if (length(coord)==1)
+      .Java(o$obj,"setCoordinates",as.integer(coord))
+    else
+      .Java(o$obj,"setCoordinates",as.integer(coord[1]),as.integer(coord[2]))
+  }
+  if (update) {
+    .Java(o$obj,"update")
+    # dirty temporary fix
+    .Java(.iplot.current$obj,"forcedFlush")
+  }
 }
 
 iobj.set <- function(obj) {
@@ -449,9 +484,13 @@ iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ...) {
 }
 
 ievent.wait <- function() {
-  mid<-.Java(.iplots.fw,"eventWait")
-  if (is.null(mid) || mid==0) return(NULL);
-  return(mid)
+  msg<-.Java(.iplots.fw,"eventWait")
+  if (!is.null(msg)) {
+    o<-list(obj=msg,msg=.Java(msg,"getMessageID"),cmd=.Java(msg,"getCommand"),pars=.Java(msg,"parCount"))
+    class(o)<-"ievent"
+    return(o)
+  }
+  return(NULL)
 }
 
 iset.sel.changed <- function (iset=iset.cur(),...) {
