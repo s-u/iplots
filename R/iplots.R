@@ -120,6 +120,7 @@ print.iplot <- function(p) { cat("ID:",p$id," Name: \"",attr(p,"iname"),"\"\n",s
 .iplot.iPlot <- function (x,y,...) {
   a<-iplot.new(.Java(.iplots.fw,"newScatterplot",x,y))
   iplot.opt(...,plot=a)
+  a
 }
 
 .iplot.iHist <- function (v1) { iplot.new(lastPlot<-.Java(.iplots.fw,"newHistogram",v1)) }
@@ -225,12 +226,15 @@ iset.selectNone <- function() { .Java(.Java(.Java(.iplots.fw,"getCurrentSet"),"g
 # brushing API
 
 # in paper: iset.color(color, what=iset.selected())
+iset.col <- function(...) { iset.brush(...) }
 iset.brush <- function(col) {
+  if (is.null(col) || is.na(col)) col<-as.integer(c(0,0))
   if (is.numeric(col) && !is.integer(col)) col<-as.integer(col)
   if (is.factor(col)) col<-as.integer(as.integer(col)+1)
   .Java(.iplots.fw,"setSecMark",col);
   # dirty temporary fix
   .Java(.iplot.current$obj,"forcedFlush");
+  invisible()
 }
 
 #** iset.cols(): return colors
@@ -294,7 +298,7 @@ iobj.cur <- function(plot = .iplot.current) {
   NULL;
 }
 
-iobj.rm <- function(obj) {
+iobj.rm <- function(obj=iobj.cur()) {
   if (is.numeric(obj)) obj<-iobj.get(obj)
   .Java(obj$pm,"rm",obj$obj)
   obj$plot$curobj<-.Java(obj$pm,"count")
@@ -359,12 +363,21 @@ iobj.opt <- function(o=iobj.cur(),...) {
   }
 }
 
+.iobj.opt.PlotPolygon <- function(o,x,y=NULL) {
+  .co<-xy.coords(x,y)
+  x<-.co$x
+  y<-.co$y
+  .Java(o$obj,"set",x,y)
+}
+
 .iobj.opt <- function(o=iobj.cur(),...,col=NULL, fill=NULL, layer=NULL, reg=NULL, visible=NULL, coord=NULL, update=TRUE, a=NULL, b=NULL) {
   if (is.numeric(o)) o<-iobj.get(o)
   if (!is.null(layer)) .Java(o$obj,"setLayer",as.integer(layer))
   if (length(list(...))>0) {
     if (o$obj[[2]]=="PlotText")
       .iobj.opt.PlotText(o,...)
+    else if (o$obj[[2]]=="PlotPolygon")
+      .iobj.opt.PlotPolygon(o,...)
     else
       .Java(o$obj,"set",...)
   }
@@ -413,10 +426,13 @@ print.iobj <- function(o) {
   cat(.Java(o$obj,"toString"),"\n")
 }
 
-ilines <- function(x,y,col=NULL,fill=NULL,visible=NULL) {
+ilines <- function(x,y=NULL,col=NULL,fill=NULL,visible=NULL) {
   if (!inherits(.iplot.current,"iplot")) {
     stop("There is no current plot")
   } else {
+    .co<-xy.coords(x,y)
+    x<-.co$x
+    y<-.co$y
     pp<-iobj.new(.iplot.current,"PlotPolygon")
     .Java(pp$obj,"set",as.numeric(x),as.numeric(y))
     if (!is.null(col) || !is.null(fill))
