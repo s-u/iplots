@@ -1,7 +1,9 @@
 .packageName <- "iplots"
 
-# iplots alpha
-# Version: $Id$
+# iplots - interactive plots for R
+# Package version: 0.1-7
+#
+# $Id$
 # (C)Copyright 2003 Simon Urbanek
 #
 # -- global variables:
