@@ -1,20 +1,31 @@
 .packageName <- "iplots"
 
+# iplots alpha
+# Version: $Id$
+# (C)Copyright 2003 Simon Urbanek
+#
 # -- global variables:
 # .iplots.fw     - framework object
 # .iplots        - list of iplot objects
 # .iplot.curid   - current plot ID
 # .iplot.current - .iplots[[.iplot.curid]]
 
+# we need SJava for all the .Java commands (should we use "require"?)
 library(SJava);
+
+# library initialization: Add "<iplots>/cont/iplots.jar" to classpath,
+# initialize Java and create an instance on the Framework "glue" class
 .First.lib <- function(lib, pkg) {
   cp<-paste(lib,pkg,"cont","iplots.jar",sep=.Platform$file.sep)
   .JavaInit(list(classPath=c(cp)))
   .iplots.fw<<-.JavaConstructor("Framework")
 }
 
+# "Debug Initialize" - like .First.lib but for debugging purposes only
+# main use is to "source" this file and use .di() for initialization.
 .di <- function() { .JavaInit(list(classPath=".")); .iplots.fw<<-.JavaConstructor("Framework") }
 
+# create a new variable (undocunmented!)
 ivar.new <- function (name,cont) {
   if(is.factor(cont)) {
     v<-.Java(.iplots.fw,"newVar",name,as.character(cont))
@@ -26,11 +37,15 @@ ivar.new <- function (name,cont) {
   .Java(.iplots.fw,"newVar",name,cont)
 }
 
+# update contents of an existing variable (undocumented!)
 ivar.update <- function (vid,cont) { .Java(.iplots.fw,"replaceVar",vid,cont); .Java(.iplots.fw,"updateVars"); }
 
+# return contents of a variable (alias for iset.var)
 ivar <- function (vid) { iset.var(vid) }
 
-# iplot managemen functions
+#============================
+# iplot management functions
+#============================
 
 iplot.set <- function (which=iplot.next()) {
   a<-try(.iplots[[which<-as.integer(which)]])
@@ -46,6 +61,8 @@ iplot.list <- function () {
   if (exists(".iplots")) .iplots else list()
 }
 
+# this function should not be called directly by the user
+# is creates a new R iplot-object for an existing Java plot object
 iplot.new <- function (plotObj) {
   if (!exists(".iplots")) {
     .iplots <<- list()
@@ -68,34 +85,59 @@ iplot.prev <- function(which = iplot.cur()) {
 print.iplot <- function(p) { cat("ID:",p$id," Name: \"",attr(p,"iname"),"\"\n",sep="") }
 
 # low-level plot calls
+.iplot.setXaxis <- function(ipl,x1,x2) { .Java(.Java(ipl,"getXAxis"),"setValueRange",x1,x2-x1); }
+.iplot.setYaxis <- function(ipl,x1,x2) { .Java(.Java(ipl,"getYAxis"),"setValueRange",x1,x2-x1); }
 
-iplot.iPlot <- function (v1,v2) { iplot.new(lastPlot<<-.Java(.iplots.fw,"newScatterplot",v1,v2)) }
-iplot.iHist <- function (v1) { iplot.new(lastPlot<-.Java(.iplots.fw,"newHistogram",v1)) }
-iplot.iBar  <- function (v1) { iplot.new(lastPlot<-.Java(.iplots.fw,"newBarchart",v1)) }
+.iplot.iPlot <- function (x,y,...) {
+  a<-iplot.new(.Java(.iplots.fw,"newScatterplot",x,y))
+  iplot.par(...,plot=a)
+}
+
+.iplot.iHist <- function (v1) { iplot.new(lastPlot<-.Java(.iplots.fw,"newHistogram",v1)) }
+
+.iplot.iBar  <- function (v1) { iplot.new(lastPlot<-.Java(.iplots.fw,"newBarchart",v1)) }
 
 # user-level plot calls
 
-iplot <- function(v1,v2) {
-   if ((is.vector(v1) || is.factor(v1)) && length(v1)>1) v1<-ivar.new(.Java(.iplots.fw,"getNewTmpVar",as.character(deparse(substitute(v1)))),v1)
-   if ((is.vector(v2) || is.factor(v2)) && length(v2)>1) v2<-ivar.new(.Java(.iplots.fw,"getNewTmpVar",as.character(deparse(substitute(v2)))),v2)
-   iplot.iPlot(v1,v2)
+iplot <- function(x,y,...) {
+   if ((is.vector(x) || is.factor(x)) && length(x)>1) x<-ivar.new(.Java(.iplots.fw,"getNewTmpVar",as.character(deparse(substitute(x)))),x)
+   if ((is.vector(y) || is.factor(y)) && length(y)>1) y<-ivar.new(.Java(.iplots.fw,"getNewTmpVar",as.character(deparse(substitute(y)))),y)
+   .iplot.iPlot(x,y,...)
 }
 
 ibar <- function(v1) {
    if ((is.vector(v1) || is.factor(v1)) && length(v1)>1) v1<-ivar.new(.Java(.iplots.fw,"getNewTmpVar",as.character(deparse(substitute(v1)))),v1);
-   iplot.iBar(v1)
+   .iplot.iBar(v1)
 }
 
 ihist <- function(v1) {
    if ((is.vector(v1) || is.factor(v1)) && length(v1)>1) v1<-ivar.new(.Java(.iplots.fw,"getNewTmpVar",as.character(deparse(substitute(v1)))),v1);
-   iplot.iHist(v1)
+   .iplot.iHist(v1)
+}
+
+iplot.par <- function(xlim=NULL, ylim=NULL, col=NULL, plot=.iplot.current) {
+  if (!is.null(xlim)) .iplot.setXaxis(plot$obj,xlim[1],xlim[2])
+  if (!is.null(ylim)) .iplot.setYaxis(plot$obj,ylim[1],ylim[2])
+  if (!is.null(col)) iset.brush(col)
+  if (!(is.null(xlim) && is.null(ulim))) {
+    if (plot$obj[[2]]=="ScatterCanvas") .Java(plot$obj,"updatePoints")
+    .Java(plot$obj,"setUpdateRoot",as.integer(0))
+    .Java(plot$obj,"repaint")
+  }
+}
+
+iplot.getPar <- function(plot=.iplot.current) {
+  p <- list()
+  if (plot$obj[[2]]=="ScatterCanvas") {
+    p$xlim<-.Java(.Java(plot$obj,"getXAxis"),"getValueRange")
+    p$ylim<-.Java(.Java(plot$obj,"getYAxis"),"getValueRange")
+  }
+  p
 }
 
 # old API functions
 
 iplot.showVars <- function() { .Java(.iplots.fw,"ivar.newFrame"); }
-iplot.setXaxis <- function(ipl=lastPlot,x1,x2) { .Java(.Java(ipl,"getXAxis"),"setValueRange",x1,x2-x1); }
-iplot.setYaxis <- function(ipl=lastPlot,x1,x2) { .Java(.Java(ipl,"getYAxis"),"setValueRange",x1,x2-x1); }
 iplot.resetXaxis <- function(ipl=lastPlot) { .Java(.Java(ipl,"getXAxis"),"setDefaultRange"); }
 iplot.resetYaxis <- function(ipl=lastPlot) { .Java(.Java(ipl,"getYAxis"),"setDefaultRange"); }
 iplot.resetAxes <- function(ipl=lastPlot) { resetXaxis(ipl); resetYaxis(ipl); }
