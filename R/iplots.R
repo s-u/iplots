@@ -2,7 +2,7 @@
 
 #==========================================================================
 # iplots - interactive plots for R
-# Package version: 0.1-17
+# Package version: 0.1-18
 #
 # $Id$
 # (C)Copyright 2003 Simon Urbanek
@@ -640,6 +640,10 @@ iobj.cur <- function(plot = .iplot.current) {
 }
 
 iobj.rm <- function(which=iobj.cur()) {
+  if (is.vector(which) && (inherits(which[1],"iobj") || is.numeric(which))) {
+    for (i in which) iobj.rm(i)
+    return()
+  }
   if (is.numeric(which)) which<-iobj.get(which)
   .jcall(which$pm,"V","rm",.jcast(which$obj,"org/rosuda/ibase/toolkit/PlotObject"))
   which$plot$curobj<-.jcall(which$pm,"I","count")
@@ -685,10 +689,16 @@ itext <- function(x, y=NULL, labels=seq(along=x), ax=NULL, ay=NULL, ..., plot=ip
 }
 
 iobj.opt <- function(o=iobj.cur(),...) {
-  if (length(list(...))==0)
-    .iobj.opt.get(o)
-  else
-    .iobj.opt(o,...)
+  if (is.list(o) && inherits(o[[1]],"iobj")) {
+    r<-list()
+    for (i in o) r<-c(r, iobj.opt(o=i, ...))
+    r
+  } else {
+    if (length(list(...))==0)
+      .iobj.opt.get(o)
+    else
+      .iobj.opt(o,...)
+  }
 }
 
 .iobj.opt.get <- function(o) {
@@ -770,6 +780,10 @@ ilines <- function(x,y=NULL,col=NULL,fill=NULL,visible=NULL,plot=iplot.cur()) {
     .co<-xy.coords(x,y)
     x<-.co$x
     y<-.co$y
+    if (length(x)==1 && length(y)==1) {
+      x<-c(x,x)
+      y<-c(y,y)
+    }
     pp<-.iobj.new(plot,"PlotPolygon")
     .jcall(pp$obj,"V","set",as.numeric(x),as.numeric(y))
     if (!is.null(col) || !is.null(fill))
@@ -798,6 +812,7 @@ ilines <- function(x,y=NULL,col=NULL,fill=NULL,visible=NULL,plot=iplot.cur()) {
     a <- coef[1]
     b <- coef[2]
   }
+  if (is.null(b)) b<-0
   list(a=a,b=b)
 }
 
