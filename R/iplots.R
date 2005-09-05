@@ -357,6 +357,17 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
 # user-level plot calls
 #==========================================================================
 
+imosaic <- function (var,...){
+  len<-length(var)
+  if (inherits(var,"ivar")) len<-.jcall(var$obj,"I","size")
+  if (is.data.frame(var) && length(var)>1){
+   varn <- vector()
+   for (v in 1:length(var)) varn <- c(varn, ivar.new(.ivar.valid.name(names(var)[v]), var[,v])$vid)
+}
+else stop("Data has to be data.frame.")
+  .iplot.iMosaic(varn,...)
+}
+
 iplot <- function(x,y=NULL,xlab=NULL,ylab=NULL,...) {
   if (inherits(x,"ivar") || inherits(y,"ivar")) {
     lx <- if (inherits(x,"ivar")) .jcall(x$obj,"I","size") else length(x)
