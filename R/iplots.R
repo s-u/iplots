@@ -417,6 +417,8 @@ ibar <- function(var, ...) {
 }
 
 ihist <- function(var, ...) {
+  if (!is.numeric(var))
+    stop("Variable must be numeric.")
   len<-length(var)
   if (inherits(var,"ivar")) len<-.jcall(var$obj,"I","size")
   if (len<2)
