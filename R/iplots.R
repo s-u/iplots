@@ -412,7 +412,7 @@ ibar <- function(var, ...) {
   if (len<2)
     stop("ibar requires at least two data points")
    if ((is.vector(var) || is.factor(var)) && length(var)>1)
-     var<-ivar.new(.ivar.valid.name(deparse(substitute(var))), as.factor(var));
+     var<-ivar.new(.ivar.valid.name(deparse(substitute(var))[1]), as.factor(var));
   .iplot.iBar(var, ...)
 }
 
@@ -424,7 +424,7 @@ ihist <- function(var, ...) {
   if (len<2)
     stop("ihist requires at least two data points")
    if ((is.vector(var) || is.factor(var)) && length(var)>1)
-     var<-ivar.new(.ivar.valid.name(deparse(substitute(var))), var);
+     var<-ivar.new(.ivar.valid.name(deparse(substitute(var))[1]), var);
   .iplot.iHist(var, ...)
 }
 
@@ -433,9 +433,9 @@ ibox <- function(x, y=NULL, ...) {
   if (inherits(x,"ivar")) len<-.jcall(x$obj,"I","size")
   if (len<2)
     stop("ibox requires at least two data points")
-  x<-ivar.new(.ivar.valid.name(deparse(substitute(x))), as.integer(x));
+  x<-ivar.new(.ivar.valid.name(deparse(substitute(x))[1]), as.integer(x));
   if (is.factor(y))
-  	y <- ivar.new(.ivar.valid.name(deparse(substitute(y))), as.factor(y));
+  	y <- ivar.new(.ivar.valid.name(deparse(substitute(y))[1]), as.factor(y));
   .iplot.iBox(x, y, ...)
 }
 
