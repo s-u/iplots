@@ -433,7 +433,7 @@ ibox <- function(x, y=NULL, ...) {
   if (inherits(x,"ivar")) len<-.jcall(x$obj,"I","size")
   if (len<2)
     stop("ibox requires at least two data points")
-  x<-ivar.new(.ivar.valid.name(deparse(substitute(x))[1]), as.double(x));
+  x<-ivar.new(.ivar.valid.name(deparse(substitute(x))[1]), x);
   if (is.factor(y))
   	y <- ivar.new(.ivar.valid.name(deparse(substitute(y))[1]), as.factor(y));
   .iplot.iBox(x, y, ...)
@@ -460,7 +460,7 @@ ipcp <- function(vars, ...) {
           var <- as.integer(var)
       varname <- names(vars)[[i]]
       if (!is.null(varname))
-	      var <- ivar.new(varname, var)
+	      var <- ivar.new(.ivar.valid.name(varname), var)
 	  else
 	      var <- ivar.new(.ivar.valid.name("pcp"), var)
       if (inherits(var,"ivar"))  vv <- c(vv,var$vid)
