@@ -302,8 +302,20 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
 }
 
 .iplot.iBox <- function (x, y, ...) {
-  if (is.null(y)) a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/BoxCanvas;","newBoxplot",x$vid))
-  else a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/BoxCanvas;","newBoxplot",x$vid,y$vid))
+ if(!inherits(x,"ivar")){
+   vv<-vector()
+    for (v in x) {
+      if (inherits(v, "ivar"))
+        vv<-c(vv,v$vid)
+      else
+        vv<-c(vv,v)
+    }
+    a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/BoxCanvas;","newBoxplot",as.integer(vv)))    
+  }
+  else {
+    if (is.null(y)) a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/BoxCanvas;","newBoxplot",x$vid))
+    else a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/BoxCanvas;","newBoxplot",x$vid,y$vid))
+  }
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
 }
@@ -429,6 +441,35 @@ ihist <- function(var, ...) {
 }
 
 ibox <- function(x, y=NULL, ...) {
+  if(is.list(x)) {
+    vv<-vector()
+    i <- 1
+    for (var in x) {
+      if (length(var) > 1) {
+        if (is.factor(var))
+          var <- as.integer(var)
+        varname <- names(x)[[i]]
+        if (!is.null(varname))
+  	  var <- ivar.new(.ivar.valid.name(varname), var)
+  	else
+ 	  var <- ivar.new(.ivar.valid.name("boxplot"), var)
+        if (inherits(var,"ivar"))  vv <- c(vv,var$vid)
+      }
+      i <- i+1
+    }
+    .iplot.iBox(vv,y, ...)
+  }
+  else {
+    len<-length(x)
+    if (inherits(x,"ivar")) len<-.jcall(x$obj,"I","size")
+    if (len<2)
+      stop("ibox requires at least two data points")
+    x<-ivar.new(.ivar.valid.name(deparse(substitute(x))[1]), x);
+    if (is.factor(y))
+      y <- ivar.new(.ivar.valid.name(deparse(substitute(y))[1]), as.factor(y));
+    .iplot.iBox(x, y, ...)
+  }
+=======
   len<-length(x)
   if (inherits(x,"ivar")) len<-.jcall(x$obj,"I","size")
   if (len<2)
