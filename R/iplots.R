@@ -469,7 +469,6 @@ ibox <- function(x, y=NULL, ...) {
       y <- ivar.new(.ivar.valid.name(deparse(substitute(y))[1]), as.factor(y));
     .iplot.iBox(x, y, ...)
   }
-=======
   len<-length(x)
   if (inherits(x,"ivar")) len<-.jcall(x$obj,"I","size")
   if (len<2)
