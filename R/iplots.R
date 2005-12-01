@@ -930,3 +930,24 @@ iset.sel.changed <- function (iset=iset.cur()) {
 .iDebug <- function(level=1) {
   .jcall(.iplots.fw,"V","setDebugLevel",as.integer(level))
 }
+
+
+
+
+##################################
+# added extended functions
+# have to be ordered in list above
+##################################
+
+grdevice <- "AWT"
+iplots.options <- function(grdev,...) {
+  if (grdev=="AWT") {
+  	grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(0))
+  } else if (grdev=="SWING") {
+  	grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(1))
+  } else if (grdev=="OPENGL") {
+  	grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(2))
+  } else {
+  	stop("graphics device not supported")
+  }
+}
