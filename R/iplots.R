@@ -62,7 +62,7 @@
 # helpler function to identify a class in a strstr manner (not nice)
 .class.strstr <- function(o, class) {
   if (!inherits(o, "jobjRef")) return(FALSE);
-  if (length(grep(class, o$jclass))>0) TRUE else FALSE
+  if (length(grep(class, .jclass(o)))>0) TRUE else FALSE
 }
 
 #==========================================================================
@@ -758,7 +758,7 @@ iobj.opt <- function(o=iobj.cur(),...) {
   .co<-xy.coords(x,y)
   x<-.co$x
   y<-.co$y
-  .jcall(o$obj,"V","set",x,y)
+  .jcall(o$obj,"V","set",as.numeric(x),as.numeric(y))
 }
 
 .iobj.opt <- function(o=iobj.cur(),...,col=NULL, fill=NULL, layer=NULL, reg=NULL, visible=NULL, coord=NULL, update=TRUE, a=NULL, b=NULL) {
