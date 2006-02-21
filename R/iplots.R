@@ -465,7 +465,7 @@ ibox <- function(x, y=NULL, ...) {
     if (len<2)
       stop("ibox requires at least two data points")
     x<-ivar.new(.ivar.valid.name(deparse(substitute(x))[1]), x);
-    if (is.factor(y))
+    if (!is.null(y))
       y <- ivar.new(.ivar.valid.name(deparse(substitute(y))[1]), as.factor(y));
     .iplot.iBox(x, y, ...)
   }
