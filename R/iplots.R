@@ -310,11 +310,11 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
       else
         vv<-c(vv,v)
     }
-    a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/BoxCanvas;","newBoxplot",as.integer(vv)))    
+    a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",as.integer(vv)))    
   }
   else {
-    if (is.null(y)) a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/BoxCanvas;","newBoxplot",x$vid))
-    else a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/BoxCanvas;","newBoxplot",x$vid,y$vid))
+    if (is.null(y)) a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",x$vid))
+    else a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",x$vid,y$vid))
   }
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
@@ -345,7 +345,7 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
   }
   if (length(vv)<2)
     stop("At least 2 valid variables are necessary for a pcp plot")
-  a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/PCPCanvas;","newPCP",as.integer(vv)))
+  a<-iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newPCP",as.integer(vv)))
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
 }
