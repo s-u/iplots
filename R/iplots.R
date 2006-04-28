@@ -940,6 +940,12 @@ iplots.options <- function(grdev,...) {
   } else if (grdev=="OPENGL") {
   	grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(2))
   } else {
-  	stop("graphics device not supported")
+  	stop(paste(grdev,"graphics device not supported"))
   }
 }
+
+iplots.extq <- function(plotID,str,...) {
+	if(str==F)  .jcall(.iplots.fw,,"useExtQueryString",as.integer(plotID),F)
+	else .jcall(.iplots.fw,,"setExtQueryString",as.integer(plotID),.jnew("java/lang/String",str))
+}
+
