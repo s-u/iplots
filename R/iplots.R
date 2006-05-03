@@ -488,8 +488,6 @@ ipcp <- function(vars, ...) {
   i <- 1
   for (var in vars) {
     if (length(var) > 1) {
-      if (is.factor(var))
-          var <- as.integer(var)
       varname <- names(vars)[[i]]
       if (!is.null(varname))
 	      var <- ivar.new(.ivar.valid.name(varname), var)
