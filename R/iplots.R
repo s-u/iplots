@@ -398,8 +398,8 @@ iplot <- function(x,y=NULL,xlab=NULL,ylab=NULL,...) {
     else ylab
     nx<-xlab
     ny<-ylab
-    x<-xy$x
-    y<-xy$y
+    if (!is.factor(x)) x<-xy$x
+    if (!is.factor(y)) y<-xy$y
     lx<-length(x)
     ly<-length(y)
   }
