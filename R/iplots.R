@@ -2,7 +2,7 @@
 
 #==========================================================================
 # iplots - interactive plots for R
-# Package version: 0.2-0
+# Package version: 0.2-1
 #
 # $Id$
 # (C)Copyright 2003 Simon Urbanek
@@ -577,7 +577,7 @@ iplot.showVars <- function() { .jcall(.iplots.fw,"V","ivar.newFrame"); }
 iplot.resetXaxis <- function(ipl=lastPlot) { .jcall(.jcall(ipl,"Lorg/rosuda/ibase/toolkit/Axis;","getXAxis"),"V","setDefaultRange"); }
 iplot.resetYaxis <- function(ipl=lastPlot) { .jcall(.jcall(ipl,"Lorg/rosuda/ibase/toolkit/Axis;","getYAxis"),"V","setDefaultRange"); }
 iplot.resetAxes <- function(ipl=lastPlot) { resetXaxis(ipl); resetYaxis(ipl); }
-iset.df <- function(df) { ndf<-list(); for(i in names(df)) { ndf[[i]]<-ivar.new(i,df[[i]]) }; as.data.frame(ndf) }
+iset.df <- function(df) { ndf<-list(); for(i in names(df)) { ndf[[i]]<-ivar.new(i,df[[i]]) }; }
 
 #==========================================================================
 # selection/highlighting API
