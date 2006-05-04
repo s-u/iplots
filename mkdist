@@ -9,26 +9,16 @@ cp -r ../iplots /tmp
 rm -rf /tmp/iplots.java
 mkdir /tmp/iplots.java
 
-JARFILE=$1
-if [ -z $JARFILE ]; then JARFILE="Klimt.jar"; fi
-if [ -e $JARFILE ]; then 
-    JARFILE=$1
-    echo "Using custom JAR file $JARFILE"
-else
-    echo "Using compiled jar ..."
-    if [ -e /Work/builds ]; then
-	BUILDIR=/Work/builds
-    fi
-    if [ -e /Builds ]; then
-	BUILDIR=/Builds
-    fi
-    echo "Build directory: ${BUILDIR}/Klimt.app"
-    if [ ! -e ${BUILDIR}/Klimt.app/Contents/Resources/Java/Klimt.jar ]; then
-	echo "Sorry, but currently I don't know how to re-build Java sources."
-	echo "Please compile the framework with Project Builder (Klimt.app in /Work/builds)"
-	exit 1
-    fi
-    JARFILE=${BUILDIR}/Klimt.app/Contents/Resources/Java/Klimt.jar
+: ${JARFILE=$1}
+if [ -z $JARFILE ]; then
+    JARFILE="../../../org/iplots.jar";
+    rm -f $JARFILE
+    make -C ../../../org JFLAGS='-source 1.4 -target 1.4' iplots.jar
+fi
+if [ ! -e $JARFILE ]; then
+    echo "*** ERROR: cannot find iplots.jar in $JARFILE" >&2
+    echo "Please check out org/rosuda or set JARFILE correspondingly" >&2
+    exit 2
 fi
 
 #echo "Copying sources ..."
@@ -42,6 +32,13 @@ fi
 
 cp ../../../org/rosuda/iplots/iPlots.jpg /tmp/iplots.java/iPlots.jpg
 cp ../../../org/rosuda/ibase/Common.java /tmp/iplots.java/Common.java
+
+# we need an absolute path because we're running in /tmp
+JBASE=`dirname $JARFILE`
+JNAME=`basename $JARFILE`
+cd $JBASE
+JARFILE=`pwd`/$JNAME
+
 cd /tmp/iplots.java
 jar fx ${JARFILE}
 mv iPlots.jpg splash.jpg
@@ -79,7 +76,7 @@ cp iplots.jar /tmp/iplots/inst/cont
 
 cd /tmp/iplots
 echo "Removing CVS stuff ..."
-rm -rf `find . -name CVS`
+rm -rf `find . -name CVS -or -name \*~ -or -name .#\*`
 #echo "Updating INDEX ..."
 cd ..
 #R CMD Rdindex iplots > iplots/INDEX
