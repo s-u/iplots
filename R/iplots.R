@@ -509,6 +509,14 @@ iplot.opt <- function(..., plot=iplot.cur()) {
 }
 
 .iplot.opt <- function(xlim=NULL, ylim=NULL, col=NULL, bwidth=NULL, anchor=NULL, breaks=NULL, main=NULL, ..., plot=iplot.cur()) {
+  repaint = FALSE
+
+  optlist <- list(...)
+  if(length(optlist)>0) {
+    for(i in 1:length(optlist)) .jcall(plot$obj,"V","setOption",names(optlist)[i],optlist[[i]])
+    repaint = TRUE
+  }
+
   if (is.numeric(plot)) plot<-.iplots[[as.integer(plot)]]
   if (!is.null(xlim)) .iplot.setXaxis(plot$obj,xlim[1],xlim[2])
   if (!is.null(ylim)) .iplot.setYaxis(plot$obj,ylim[1],ylim[2])
@@ -516,9 +524,7 @@ iplot.opt <- function(..., plot=iplot.cur()) {
     .jcall(.jcall(plot$obj,"Ljava/awt/Frame;","getFrame"),"V","setTitle",as.character(main))
   if (!is.null(col)) iset.brush(col)
   if (!(is.null(xlim) && is.null(ylim))) {
-    if (plot$obj$jclass=="org/rosuda/ibase/plots/ScatterCanvas") .jcall(plot$obj,"V","updatePoints")
-    .jcall(plot$obj,"V","setUpdateRoot",as.integer(0))
-    .jcall(plot$obj,"V","repaint")
+    repaint = TRUE
   }
   if (!is.null(breaks)) {
     if (length(breaks)>0) anchor<-breaks[1]
@@ -533,9 +539,16 @@ iplot.opt <- function(..., plot=iplot.cur()) {
     .jcall(plot$obj,"V","setHistParam",anchor,bwidth)
   }
 
+  if(repaint) {
+    .jcall(plot$obj,"V","updateObjects")
+    .jcall(plot$obj,"V","setUpdateRoot",as.integer(0))
+    .jcall(plot$obj,"V","repaint")
+  }
+
   # dirty temporary fix
   .jcall(plot$obj,"V","forcedFlush")
   invisible()
+
 }
 
 .iplot.getPar <- function(plot=.iplot.current) {
