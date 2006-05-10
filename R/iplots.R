@@ -592,6 +592,37 @@ iplot.resetYaxis <- function(ipl=lastPlot) { .jcall(.jcall(ipl,"Lorg/rosuda/ibas
 iplot.resetAxes <- function(ipl=lastPlot) { resetXaxis(ipl); resetYaxis(ipl); }
 iset.df <- function(df) { ndf<-list(); for(i in names(df)) { ndf[[i]]<-ivar.new(i,df[[i]]) }; }
 
+# BaseCanvas methods
+
+iplot.zoomIn<-function(x1,y1,x2,y2) {.jcall(.iplot.current$obj,,"performZoomIn",as.integer(x1),as.integer(y1),as.integer(x2),as.integer(y2));invisible();}
+iplot.zoomOut<-function(x,y) {.jcall(.iplot.current$obj,,"performZoomOut",as.integer(x),as.integer(y));invisible();}
+iplot.resetZoom<-function() {.jcall(.iplot.current$obj,"V","resetZoom");invisible();}
+iplot.rotate<-function(i){.jcall(.iplot.current$obj,"V","rotate",as.integer(i));invisible();}
+//iplot.setMargins<-function(left,right,top,bottom) {
+//	v<-c(left,right,top,bottom);
+//	.jcall(.iplot.current$obj,"V","setDefaultMargins",.jarray(v));invisible();}
+
+iplot.grdevice <- "AWT"
+iplot.setGraphicsDevice <- function(grdev) {
+  if (grdev=="AWT") {
+  	grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(0))
+  } else if (grdev=="SWING") {
+  	grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(1))
+  } else if (grdev=="OPENGL") {
+  	grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(2))
+  } else {
+  	stop(paste(grdev,"graphics device not supported"))
+  }
+  invisible();
+}
+iplot.setExtendedQuery <- function(plotID,str) {
+	if(str==F)  .jcall(.iplots.fw,,"useExtQueryString",as.integer(plotID),F)
+	else .jcall(.iplots.fw,,"setExtQueryString",as.integer(plotID),.jnew("java/lang/String",str))
+	invisible();
+}
+iplot.setExtendedQuery<-function(str) {iplot.setExtendedQuery(.iplot.curid,str); invisible();}
+
+
 #==========================================================================
 # selection/highlighting API
 #==========================================================================
@@ -942,21 +973,27 @@ iset.sel.changed <- function (iset=iset.cur()) {
 # have to be ordered in list above
 ##################################
 
-grdevice <- "AWT"
-iplots.options <- function(grdev,...) {
-  if (grdev=="AWT") {
-  	grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(0))
-  } else if (grdev=="SWING") {
-  	grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(1))
-  } else if (grdev=="OPENGL") {
-  	grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(2))
-  } else {
-  	stop(paste(grdev,"graphics device not supported"))
-  }
+
+icustom.plot<-function(name,min.data.dim,param,construct) {
+	frdev=.jcall(.iplots.fw,"Lorg/rosuda/ibase/toolkit/FrameDevice;","newFrame",name);
+	.jcall(frdev,,"initPlacement");
+	.jcall(frdev,,"setVisible",T);
+	.jcall(frdev,,"addWindowListener",.jcall("Lorg/rosuda/ibase/Common;","Ljava/awt/event/WindowListener;","getDefaultWindowListener"));
+	frame=.jcall(frdev,"Ljava/awt/Frame;","getFrame");
+	marker=.jcall(.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","getCurrentSet"),"Lorg/rosuda/ibase/SMarker;","getMarker");
+	if(is.null(marker)) print("marker==NULL");
+	plot=.jnew("org/rosuda/ibase/toolkit/CustomCanvas",as.integer(iplot.getGrDevID()),frame,marker);
+	.jcall(frdev,"Ljava/awt/Component;","add",.jcall(plot,"Ljava/awt/Component;","getComponent"));
 }
 
-iplots.extq <- function(plotID,str,...) {
-	if(str==F)  .jcall(.iplots.fw,,"useExtQueryString",as.integer(plotID),F)
-	else .jcall(.iplots.fw,,"setExtQueryString",as.integer(plotID),.jnew("java/lang/String",str))
+iplot.getGrDevID<-function() {
+		if(iplot.grdevice=="AWT") return(0);
+		if(iplot.grdevice=="SWING") return(1);
+		if(iplot.grdevice=="OPENGL") return(2);
+	}
+	
+new.PPrimRect<-function(pplot,x,y,w,h) {
+	pp=.jnew("org/rosuda/ibase/toolkit/PPrimRectangle");
+	.jcall(pp,,"setBounds",as.integer(x),as.integer(y),as.integer(w),as.integer(h));
+	return(pp);
 }
-
