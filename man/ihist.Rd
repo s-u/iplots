@@ -11,6 +11,8 @@ ihist(var, ...)
 }
 \arguments{
   \item{var}{Vector of numbers or variable to use.}
+  \item{anchor}{Anchor point for the histogram.}
+  \item{binw}{Bin width.}
   \item{...}{All additional parameters are passed to
     \code{\link{iplot.opt}}.}
 }
