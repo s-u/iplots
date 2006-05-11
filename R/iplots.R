@@ -508,7 +508,7 @@ iplot.opt <- function(..., plot=iplot.cur()) {
     .iplot.opt(...,plot=plot)
 }
 
-.iplot.opt <- function(xlim=NULL, ylim=NULL, col=NULL, bwidth=NULL, anchor=NULL, breaks=NULL, main=NULL, ..., plot=iplot.cur()) {
+.iplot.opt <- function(xlim=NULL, ylim=NULL, col=NULL, main=NULL, ..., plot=iplot.cur()) {
   repaint = FALSE
 
   optlist <- list(...)
@@ -525,18 +525,6 @@ iplot.opt <- function(..., plot=iplot.cur()) {
   if (!is.null(col)) iset.brush(col)
   if (!(is.null(xlim) && is.null(ylim))) {
     repaint = TRUE
-  }
-  if (!is.null(breaks)) {
-    if (length(breaks)>0) anchor<-breaks[1]
-    if (length(breaks)>1) bwidth<-breaks[2]
-  }
-  if (!is.null(anchor) || !is.null(bwidth)) {
-    if (is.null(anchor) || is.null(bwidth)) {
-      p<-.jcall(plot$obj,"[D","getHistParam")
-      if (is.null(anchor)) anchor<-p[1]
-      if (is.null(bwidth)) bwidth<-p[2]
-    }
-    .jcall(plot$obj,"V","setHistParam",anchor,bwidth)
   }
 
   if(repaint) {
@@ -598,9 +586,9 @@ iplot.zoomIn<-function(x1,y1,x2,y2) {.jcall(.iplot.current$obj,,"performZoomIn",
 iplot.zoomOut<-function(x,y) {.jcall(.iplot.current$obj,,"performZoomOut",as.integer(x),as.integer(y));invisible();}
 iplot.resetZoom<-function() {.jcall(.iplot.current$obj,"V","resetZoom");invisible();}
 iplot.rotate<-function(i){.jcall(.iplot.current$obj,"V","rotate",as.integer(i));invisible();}
-//iplot.setMargins<-function(left,right,top,bottom) {
-//	v<-c(left,right,top,bottom);
-//	.jcall(.iplot.current$obj,"V","setDefaultMargins",.jarray(v));invisible();}
+#//iplot.setMargins<-function(left,right,top,bottom) {
+#//	v<-c(left,right,top,bottom);
+#//	.jcall(.iplot.current$obj,"V","setDefaultMargins",.jarray(v));invisible();}
 
 iplot.grdevice <- "AWT"
 iplot.setGraphicsDevice <- function(grdev) {
