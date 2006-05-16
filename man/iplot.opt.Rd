@@ -7,15 +7,39 @@
   This function modifies parameters of an iPlot.
 }
 \usage{
-iplot.opt(..., plot=iplot.cur())
+iplot.opt(plot=iplot.cur(), autoAdjustMargins=TRUE, COL_INVALID="red,
+ COL_OUTLINE="black", COL_ZOOMBG=rgb(0,0.3,1,0.25), horizontalMedDist=50,
+ horizontalMinDist=35, verticalMedDist=30, verticalMinDist=18, extQueryString="",
+ ...)
 }
 \arguments{
+  \item{plot}{Plot whose parameters are to be modified.}
   \item{xlim}{Range of the X axis (vector of two numbers).}
   \item{ylim}{Range of the Y axis (vector of two numbers).}
   \item{col}{Colors of the points. See \code{\link{iset.brush}} for
     details.}
+  \item{autoAdjustMargins}{Whether iPlots should try to determine appropriate
+    margin sizes. Set this to FALSE if you want to set the margins manually.}
+  \item{defaultMargins}{Vector of default values for left, right, top and bottom margins.}
+  \item{mLeft}{Size of left margin.}
+  \item{mRight}{Size of right margin.}
+  \item{mTop}{Size of top margin.}
+  \item{mBottom}{Size of bottom margin.}
+  \item{fillColor}{Fill color.}
+  \item{borderColor}{Border color.}
+  \item{fillColorSel}{Fill color when selected.}
+  \item{borderColorSel}{Border color when selected.}
+  \item{COL_INVALID}{Color of invalid elements.}
+  \item{COL_OUTLINE}{Default line color.}
+  \item{COL_SELBG}{Background color of selection rectangle. Defaults to selection color with alpha value 0.298.}
+  \item{COL_ZOOMBG}{Background color of selection rectangle.}
+  \item{horizontalMedDist}{Mean horizontal label distance.}
+  \item{horizontalMinDist}{Minimal horizontal label distance.}
+  \item{verticalMedDist}{Mean vertical label distance.}
+  \item{verticalMinDist}{Minimal vertical label distance.}
+  \item{extQueryString}{Extended query string.}
+  \item{title}{Frame title.}
   \item{...}{Plot specific parameters.}
-  \item{plot}{Plot whose parameters are to be modified.}
 }
 \value{
   If no parameters (except for the plot) are specified, a list of the

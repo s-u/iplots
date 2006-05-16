@@ -7,12 +7,13 @@
   This function creates a new interactive bar chart from the given data.
 }
 \usage{
-ibar(var, drawTicks=FALSE, isSpine=FALSE, ...)
+ibar(var, drawTicks=FALSE, isSpine=FALSE, fillColorDrag="gray", ...)
 }
 \arguments{
   \item{var}{Factor, vector of strings or variable to use.}
   \item{drawTicks}{Whether ticks should be drawn.}
   \item{isSpine}{Whether a spineplot should be created instead of a normal barchart.}
+  \item{fillColorDrag}{Fill color of dragged bars.}
   \item{...}{All additional parameters are passed to
     \code{\link{iplot.opt}}.}
 }

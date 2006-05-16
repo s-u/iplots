@@ -7,7 +7,7 @@
   This function creates a new interactive scatterplot from the given data.
 }
 \usage{
-iplot(x, y=NULL, xlab=NULL, ylab=NULL, changePtDiamBy=2, customFieldBg=FALSE, minimalDiam=1, ptDiam=3, spaceprop=1.1, ...)
+iplot(x, y=NULL, xlab=NULL, ylab=NULL, changePtDiamBy=2, customFieldBg=FALSE, COL_CUSTOMBG="white", minimalDiam=1, ptDiam=3, spaceprop=1.1, ...)
 }
 \arguments{
   \item{x}{Data for the x axis. It can be either a vector of values or a variable of an iset. If y is not given, this must be a list of one of these.}
@@ -16,6 +16,7 @@ iplot(x, y=NULL, xlab=NULL, ylab=NULL, changePtDiamBy=2, customFieldBg=FALSE, mi
   \item{ylab}{Name for y variable.}
   \item{changePtDiamBy}{Number of pixels the point diameter should be changed when in-/decreasing it via keyboard or menu.}
   \item{customFieldBg}{Whether to use a custom background color.}
+  \item{COL_CUSTOMBG}{The custom background color.}
   \item{minimalDiam}{Minimal point diameter.}
   \item{ptDiam}{Point diameter.}
   \item{spaceprop}{Gives the amount of space around the data points. 1.0 means no space, 1.5 means half as much space around the data as is used for the data itself.}
