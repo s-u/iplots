@@ -7,7 +7,7 @@
   This function creates a new interactive bar chart from the given data.
 }
 \usage{
-ibar(var, drawTicks=FALSE, isSpine=FALSE, fillColorDrag="gray", ...)
+ibar(var, drawTicks=FALSE, isSpine=FALSE, fillColorDrag=rgb(128,128,128,70,max=255), ...)
 }
 \arguments{
   \item{var}{Factor, vector of strings or variable to use.}
