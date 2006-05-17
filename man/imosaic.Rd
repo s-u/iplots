@@ -7,7 +7,7 @@
   This function creates a new interactive mosaic plot from the given data.
 }
 \usage{
-iplot(x, ...)
+imosaic(x, ...)
 }
 \arguments{
   \item{x}{Data frame containing the variables.}
