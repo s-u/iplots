@@ -10,7 +10,7 @@
 iplot.opt(plot=iplot.cur(), autoAdjustMargins=TRUE, COL_INVALID="red,
  COL_OUTLINE="black", COL_ZOOMBG=rgb(0,0.3,1,0.25), horizontalMedDist=50,
  horizontalMinDist=35, verticalMedDist=30, verticalMinDist=18, extQueryString="",
- ...)
+ rotateYLabels=TRUE, rotateYLabelsBy=270, ...)
 }
 \arguments{
   \item{plot}{Plot whose parameters are to be modified.}
@@ -38,6 +38,8 @@ iplot.opt(plot=iplot.cur(), autoAdjustMargins=TRUE, COL_INVALID="red,
   \item{verticalMedDist}{Mean vertical label distance.}
   \item{verticalMinDist}{Minimal vertical label distance.}
   \item{extQueryString}{Extended query string.}
+  \item{rotateYLabels}{Whether labels for the y axis should be rotated by the angle given by rotateYLabelsBy.}
+  \item{rotateYLabelsBy}{The labels for the y axis are rotated by this amount of degrees if rotateYLabels is set to true.}
   \item{title}{Frame title.}
   \item{...}{Plot specific parameters.}
 }
