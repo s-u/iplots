@@ -19,7 +19,7 @@ iplot(x, y=NULL, xlab=NULL, ylab=NULL, changePtDiamBy=2, customFieldBg=FALSE, CO
   \item{COL_CUSTOMBG}{The custom background color.}
   \item{minimalDiam}{Minimal point diameter.}
   \item{ptDiam}{Point diameter.}
-  \item{spaceprop}{Gives the amount of space around the data points. 1.0 means no space, 1.5 means half as much space around the data as is used for the data itself.}
+  \item{spaceprop}{Gives the amount of space around the data points. 1.0 means no space, 1.5 means half as much space around the data as is used for the data itself. This resets zoom.}
   \item{...}{All additional parameters are passed to
     \code{\link{iplot.opt}}. Many of the parameters used in
     \code{\link{plot}} are supported.
