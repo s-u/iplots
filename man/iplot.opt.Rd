@@ -7,10 +7,11 @@
   This function modifies parameters of an iPlot.
 }
 \usage{
-iplot.opt(plot=iplot.cur(), autoAdjustMargins=TRUE, COL_INVALID="red,
+iplot.opt(plot=iplot.cur(), autoAdjustMargins=TRUE,
+ fillColorDrag=rgb(128,128,128,70,max=255), COL_INVALID="red,
  COL_OUTLINE="black", COL_ZOOMBG=rgb(0,0.3,1,0.25), horizontalMedDist=50,
- horizontalMinDist=35, verticalMedDist=30, verticalMinDist=18, extQueryString="",
- rotateYLabels=TRUE, rotateYLabelsBy=270, ...)
+ horizontalMinDist=35, verticalMedDist=30, verticalMinDist=18,
+ extQueryString="", rotateYLabels=TRUE, rotateYLabelsBy=270, ...)
 }
 \arguments{
   \item{plot}{Plot whose parameters are to be modified.}
@@ -29,6 +30,7 @@ iplot.opt(plot=iplot.cur(), autoAdjustMargins=TRUE, COL_INVALID="red,
   \item{borderColor}{Border color.}
   \item{fillColorSel}{Fill color when selected.}
   \item{borderColorSel}{Border color when selected.}
+  \item{fillColorDrag}{Fill color of dragged bars.}
   \item{COL_INVALID}{Color of invalid elements.}
   \item{COL_OUTLINE}{Default line color.}
   \item{COL_SELBG}{Background color of selection rectangle. Defaults to selection color with alpha value 0.298.}
