@@ -80,7 +80,7 @@ iset.set <- function(which = iset.next()) {
   if (is.character(which)) {
     nso<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","selectSet",which)
     if (is.null(nso))
-      stop("Therre is no such iSet.")
+      stop("There is no such iSet.")
     ci<-.jcall(.iplots.fw,"I","curSetId")+1
     .iplots<<-.isets[[ci]]$iplots
     .iplot.curid<<-.isets[[ci]]$iplot.cid
@@ -264,6 +264,7 @@ iplot.new <- function (plotObj) {
   }
   a<-list(id=(length(.iplots)+1),obj=plotObj)
   class(a)<-"iplot"
+  str(plotObj);
   attr(a,"iname")<-.jstrVal(.jcall(plotObj,"S","getTitle"))
   .iplot.current <<- .iplots[[.iplot.curid <<- (length(.iplots)+1)]] <<- a
 }
@@ -593,11 +594,11 @@ iplot.rotate<-function(i){.jcall(.iplot.current$obj,"V","rotate",as.integer(i));
 iplot.grdevice <- "AWT"
 iplot.setGraphicsDevice <- function(grdev) {
   if (grdev=="AWT") {
-  	grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(0))
+  	iplot.grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(0))
   } else if (grdev=="SWING") {
-  	grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(1))
+  	iplot.grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(1))
   } else if (grdev=="OPENGL") {
-  	grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(2))
+  	iplot.grdevice <- .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(2))
   } else {
   	stop(paste(grdev,"graphics device not supported"))
   }
@@ -962,26 +963,139 @@ iset.sel.changed <- function (iset=iset.cur()) {
 ##################################
 
 
-icustom.plot<-function(name,min.data.dim,param,construct) {
-	frdev=.jcall(.iplots.fw,"Lorg/rosuda/ibase/toolkit/FrameDevice;","newFrame",name);
-	.jcall(frdev,,"initPlacement");
-	.jcall(frdev,,"setVisible",T);
-	.jcall(frdev,,"addWindowListener",.jcall("Lorg/rosuda/ibase/Common;","Ljava/awt/event/WindowListener;","getDefaultWindowListener"));
-	frame=.jcall(frdev,"Ljava/awt/Frame;","getFrame");
-	marker=.jcall(.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","getCurrentSet"),"Lorg/rosuda/ibase/SMarker;","getMarker");
-	if(is.null(marker)) print("marker==NULL");
-	plot=.jnew("org/rosuda/ibase/toolkit/CustomCanvas",as.integer(iplot.getGrDevID()),frame,marker);
-	.jcall(frdev,"Ljava/awt/Component;","add",.jcall(plot,"Ljava/awt/Component;","getComponent"));
-}
-
 iplot.getGrDevID<-function() {
 		if(iplot.grdevice=="AWT") return(0);
 		if(iplot.grdevice=="SWING") return(1);
 		if(iplot.grdevice=="OPENGL") return(2);
 	}
 	
-new.PPrimRect<-function(pplot,x,y,w,h) {
+new.PPrimRect<-function(pplot,x,y,w,h,ids) {
 	pp=.jnew("org/rosuda/ibase/toolkit/PPrimRectangle");
-	.jcall(pp,,"setBounds",as.integer(x),as.integer(y),as.integer(w),as.integer(h));
+	.jcall(pp,,"setBounds",as.double(x),as.double(y),as.double(w),as.double(h));
+	.jcall(pp,,"setCaseIDs",.jarray(ids));
+	.iplots.cp.addPP(pplot,pp);
+	print(pp);
 	return(pp);
 }
+
+.iplots.cp.addPP<-function(pplot,pp) {
+	.jcall(pplot$obj,,"addPP",pp);
+}
+
+.iplots.cp.resetPP<-function(pplot) {
+	.jcall(pplot$obj,,"resetPP");
+}
+
+iaxiscont<-function(pplot,n,or,valuerange,pixelcoord) {
+	if(length(valuerange)!=2&&length(pixelcoord)!=2) return(NULL);
+	if(or=="x") or=0;
+	if(or=="y") or=1;
+	axtype=0;
+	a=.jnew("org/rosuda/ibase/toolkit/Axis",.jnull("org/rosuda/ibase/SVar"),as.integer(or),as.integer(axtype));
+	.jcall(a,,"setGeometry",as.integer(or),as.integer(valuerange[1]),as.integer(valuerange[2]));
+	.jcall(a,"Z","setValueRange",as.double(pixelcoord[1]),as.double(pixelcoord[2]));
+	.jcall(pplot$obj,,"setAxis",a);
+	.jcall(a,,"addDepend",.jcast(pplot$obj,"org/rosuda/ibase/Dependent"));
+	gvp=function(pos) {
+		ppos=.jcall(a,"I","getValuePos",as.double(pos));
+		return(ppos);
+	}
+	return(gvp);
+}
+
+iaxiscat<-function(pplot,n,or,valuerange,pixelcoord) {
+	if(length(valuerange)!=2&&length(pixelcoord)!=2) return(NULL);
+	axtype=1;
+	if(or=="x") or=0;
+	if(or=="y") or=1;
+	a=.jnew("org/rosuda/ibase/toolkit/Axis",.jnull("org/rosuda/ibase/SVar"),as.integer(or),as.integer(axtype));
+	.jcall(a,,"setGeometry",as.integer(or),as.integer(valuerange[1]),as.integer(valuerange[2]));
+	.jcall(a,"Z","setValueRange",as.double(pixelcoord[1]),as.double(pixelcoord[2]));
+	.jcall(pplot$obj,,"setAxis",a);
+	.jcall(a,,"addDepend",.jcast(pplot$obj,"org/rosuda/ibase/Dependent"));
+	gcp=function(pos) {
+		ppos=.jcall(a,"I","getCasePos",as.double(pos));
+		return(ppos);
+	}
+	return(gcp);
+}
+
+iaxis<-function(pplot,n,or,valuerange,pixelcoord) {
+	if(length(valuerange)!=2&&length(pixelcoord)!=2) return(NULL);
+	if(or=="x") or=0;
+	if(or=="y") or=1;
+	a=.jnew("org/rosuda/ibase/toolkit/Axis",.jnull("org/rosuda/ibase/SVar"));
+	.jcall(a,,"setGeometry",as.integer(or),as.integer(valuerange[1]),as.integer(valuerange[2]));
+	.jcall(a,"Z","setValueRange",as.double(pixelcoord[1]),as.double(pixelcoord[2]));
+	.jcall(pplot$obj,,"setAxis",a);
+	.jcall(a,,"addDepend",.jcast(pplot$obj,"org/rosuda/ibase/Dependent"));
+	gcp=function(pos) {
+		if(.jcall(v,"Z","isCat")==T) {ppos=.jcall(a,"I","getCasePos",as.double(pos)); return(ppos);}
+		else if(.jcall(v,"Z","isNum")==T) {ppos=.jcall(a,"I","getValuePos",as.double(pos)); return(ppos);}
+	}
+	return(gcp);
+}
+
+data(iris);
+dat=iris[1:2];
+dat[[2]]=factor(as.integer(runif(150,0,2)));levels(dat[[2]])<-c("M","W")
+dat[[1]]=dat[[1]]*13-30
+
+pplot=.iplots[[iplot.cur()]];
+
+icustom.plot<-function(name,min.data.dim,param,construct) {
+	
+	f<-function(vars,...) {
+	  vv<-vector()
+	  i <- 1
+	  for (var in vars) {
+    	if (length(var) > 1) {
+	      varname <- names(vars)[[i]]
+	      if (!is.null(varname))
+		      var <- ivar.new(.ivar.valid.name(varname), var)
+		  else
+		      var <- ivar.new(.ivar.valid.name("customVar"), var)
+	      if (inherits(var,"ivar"))  vv <- c(vv,var$vid)
+	    }
+	    i <- i+1
+ 	 }
+	  if (length(list(...))>0) iplot.opt(...,plot=a)
+		lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/CustomCanvas;","newCustomplot",as.integer(vv),"");
+		
+		a<-iplot.new(lastPlot);
+		.jcall(lastPlot,,"updateObjects");
+		return(a);
+	}
+	
+}
+
+iagepyr.definition=list(name="Alterspyramide",min.data.dim=2,param=list(bin.width=5),
+		construct=function(plot,width,height,data)	 {
+			print("Bin im construct");
+			bin.width=iagepyr.definition$param$bin.width;
+		    side=unclass(data[[2]])
+		    left=which(side==1)
+		    right=which(side==2)
+   			anchor=min(data[[1]])
+    		bins=ceiling(max(data[[1]])/bin.width)
+		    bin=ceiling((data[[1]]-anchor)/bin.width)
+		   	largest.bin=max(table(bin))
+		   	print(largest.bin);
+	   	    print(plot$obj);
+	   	    a.l=iaxiscont(plot, 1, "x", c(0, largest.bin), c(width/2, 10))
+   	        a.r=iaxiscont(plot, 2, "x", c(0, largest.bin), c(width/2, width-10))
+            a.y=iaxiscont(plot, 3, "y", c(0, bins), c(0,100))
+			.iplots.cp.resetPP(plot);
+            for (i in 1:bins) {
+	        	ids.l=which(bin==i & side==1)
+	        	str(ids.l);
+	        	if (length(ids.l)>0)
+	        		new.PPrimRect(plot, a.l(0), a.y(i-0.5), a.l(length(ids.l)), a.y(i+0.5), id=ids.l)
+	        	ids.r=which(bin==i & side==2)
+     	    	if (length(ids.r)>0)
+	        		new.PPrimRect(plot, a.r(0), a.y(i-0.5), a.r(length(ids.r)), a.y(i+0.5), id=ids.r)
+		    }
+		});
+
+iagepyr<-icustom.plot(iagepyr.definition);
+		
