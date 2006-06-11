@@ -992,8 +992,8 @@ iaxiscont<-function(pplot,n,or,valuerange,pixelcoord) {
 	if(or=="y") or=1;
 	axtype=0;
 	a=.jnew("org/rosuda/ibase/toolkit/Axis",.jnull("org/rosuda/ibase/SVar"),as.integer(or),as.integer(axtype));
-	.jcall(a,,"setGeometry",as.integer(or),as.integer(valuerange[1]),as.integer(valuerange[2]));
-	.jcall(a,"Z","setValueRange",as.double(pixelcoord[1]),as.double(pixelcoord[2]));
+	.jcall(a,,"setGeometry",as.integer(or),as.integer(pixelcoord[1]),as.integer(pixelcoord[2]));
+	.jcall(a,"Z","setValueRange",as.double(valuerange[1]),as.double(valuerange[2]));
 	.jcall(pplot$obj,,"setAxis",a);
 	.jcall(a,,"addDepend",.jcast(pplot$obj,"org/rosuda/ibase/Dependent"));
 	gvp=function(pos) {
@@ -1009,8 +1009,8 @@ iaxiscat<-function(pplot,n,or,valuerange,pixelcoord) {
 	if(or=="x") or=0;
 	if(or=="y") or=1;
 	a=.jnew("org/rosuda/ibase/toolkit/Axis",.jnull("org/rosuda/ibase/SVar"),as.integer(or),as.integer(axtype));
-	.jcall(a,,"setGeometry",as.integer(or),as.integer(valuerange[1]),as.integer(valuerange[2]));
-	.jcall(a,"Z","setValueRange",as.double(pixelcoord[1]),as.double(pixelcoord[2]));
+	.jcall(a,,"setGeometry",as.integer(or),as.integer(pixelcoord[1]),as.integer(pixelcoord[2]));
+	.jcall(a,"Z","setValueRange",as.double(valuerange[1]),as.double(valuerange[2]));
 	.jcall(pplot$obj,,"setAxis",a);
 	.jcall(a,,"addDepend",.jcast(pplot$obj,"org/rosuda/ibase/Dependent"));
 	gcp=function(pos) {
@@ -1025,8 +1025,8 @@ iaxis<-function(pplot,n,or,valuerange,pixelcoord) {
 	if(or=="x") or=0;
 	if(or=="y") or=1;
 	a=.jnew("org/rosuda/ibase/toolkit/Axis",.jnull("org/rosuda/ibase/SVar"));
-	.jcall(a,,"setGeometry",as.integer(or),as.integer(valuerange[1]),as.integer(valuerange[2]));
-	.jcall(a,"Z","setValueRange",as.double(pixelcoord[1]),as.double(pixelcoord[2]));
+	.jcall(a,,"setGeometry",as.integer(or),as.integer(pixelcoord[1]),as.integer(pixelcoord[2]));
+	.jcall(a,"Z","setValueRange",as.double(valuerange[1]),as.double(valuerange[2]));
 	.jcall(pplot$obj,,"setAxis",a);
 	.jcall(a,,"addDepend",.jcast(pplot$obj,"org/rosuda/ibase/Dependent"));
 	gcp=function(pos) {
