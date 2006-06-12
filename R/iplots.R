@@ -1036,12 +1036,12 @@ iaxis<-function(pplot,n,or,valuerange,pixelcoord) {
 	return(gcp);
 }
 
-data(iris);
-dat=iris[1:2];
-dat[[2]]=factor(as.integer(runif(150,0,2)));levels(dat[[2]])<-c("M","W")
-dat[[1]]=dat[[1]]*13-30
+# data(iris);
+# dat=iris[1:2];
+# dat[[2]]=factor(as.integer(runif(150,0,2)));levels(dat[[2]])<-c("M","W")
+# dat[[1]]=dat[[1]]*13-30
 
-pplot=.iplots[[iplot.cur()]];
+# pplot=.iplots[[iplot.cur()]];
 
 icustom.plot<-function(name,min.data.dim,param,construct) {
 	
