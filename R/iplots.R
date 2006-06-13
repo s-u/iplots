@@ -1070,7 +1070,6 @@ icustom.plot<-function(name,min.data.dim,param,construct) {
 		lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/CustomCanvas;","newCustomplot",as.integer(vv),"");
 		
 		a<-iplot.new(lastPlot);
-		.jcall(lastPlot,,"updateObjects");
 		return(a);
 	}
 	
@@ -1125,4 +1124,4 @@ iagepyr.definition=list(name="Alterspyramide",min.data.dim=2,param=list(bin.widt
 		    }
 		});
 
-#iagepyr<-icustom.plot(iagepyr.definition);
+# iagepyr<-icustom.plot(iagepyr.definition);
