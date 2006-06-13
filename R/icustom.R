@@ -12,14 +12,9 @@ iplot.getGrDevID<-function() {
 	
 ## (x,y) top left corner of rectangle
 ## (w,h) width, height of rectangle
-new.PPrimRect<-function(pplot,x1,y1,x2,y2,ids) {
-	or=1;
-	if(w<0 && h>=0) {or=4;}
-	else if(w>=0 && h<0) {or=3;}
-	else if(w>=0 && h>=0) {or=1;}
-	else {or=2;}
+new.PPrimRect<-function(pplot,x,y,w,h,or,ids) {
 	pp=.jnew("org/rosuda/ibase/toolkit/PPrimRectangle",as.integer(or));
-	.jcall(pp,,"setBounds",as.double(x),as.double(y),as.double(w),as.double(h));
+	.jcall(pp,,"setBounds",as.double(x),as.double(y),as.double(abs(w)),as.double(abs(h)));
 	.jcall(pp,,"setCaseIDs",.jarray(ids));
 	.iplots.cp.addPP(pplot,pp);
 	print(pp);
@@ -89,12 +84,12 @@ iaxis<-function(pplot,n,or,valuerange,pixelcoord) {
 	return(gcp);
 }
 
-# data(iris);
-# dat=iris[1:2];
-# dat[[2]]=factor(as.integer(runif(150,0,2)));levels(dat[[2]])<-c("M","W")
-# dat[[1]]=dat[[1]]*13-30
+data(iris);
+dat=iris[1:2];
+dat[[2]]=factor(as.integer(runif(150,0,2)));levels(dat[[2]])<-c("M","W")
+dat[[1]]=dat[[1]]*13-30
 
-# pplot=.iplots[[iplot.cur()]];
+pplot=.iplots[[iplot.cur()]];
 
 icustom.plot<-function(name,min.data.dim,param,construct) {
 	
@@ -116,13 +111,16 @@ icustom.plot<-function(name,min.data.dim,param,construct) {
 		lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/CustomCanvas;","newCustomplot",as.integer(vv),"");
 		
 		a<-iplot.new(lastPlot);
-		.jcall(lastPlot,,"updateObjects");
 		return(a);
 	}
 	
 }
 
-iagepyr.definition=list(name="Alterspyramide",min.data.dim=2,param=list(bin.width=5),
+iagepyr.caller<-function(plot,width,height,data) {
+	iagepyr.definition$construct(plot,width,height,data);
+}
+
+iagepyr.definition=list(name="Alterspyramide",min.data.dim=2,param=list(bin.width=10),
 		construct=function(plot,width,height,data)	 {
 			print("Bin im construct");
 			bin.width=iagepyr.definition$param$bin.width;
@@ -149,12 +147,22 @@ iagepyr.definition=list(name="Alterspyramide",min.data.dim=2,param=list(bin.widt
             for (i in 1:bins) {
 	        	ids.l=which(bin==i & side==1)
 	        	ids.r=which(bin==i & side==2)
-     	    	if (length(ids.l)>0)
-	        		new.PPrimRect(plot, a.l(length(ids.l))-a.l(0), a.y(i+0.5)-a.y(i-0.5), a.l(0), a.y(i-0.5),id=ids.l)
-	        	if (length(ids.r)>0)
-	        		new.PPrimRect(plot, a.r(0), a.y(i-0.5), a.r(length(ids.r))-a.r(0), a.y(i+0.5)-a.y(i-0.5), id=ids.r);
-	        		
+     	    	if (length(ids.l)>0) {
+     	    		x=2*a.l(0)-a.l(length(ids.l));
+     	    		y=a.y(i-0.5);
+     	    		w=a.l(length(ids.l))-a.l(0);
+     	    		h=a.y(i+0.5)-a.y(i-0.5);
+					new.PPrimRect(plot,x,y,w,h, as.integer(3), id=ids.l);
+				}
+				if(length(ids.r)>0) {
+					x=a.r(0);
+					y=a.y(i-0.5);
+					w=a.r(length(ids.r))-a.r(0);
+					h=a.y(i+0.5)-a.y(i-0.5);
+					new.PPrimRect(plot,x,y,w,h,as.integer(1),id=ids.r);
+				}
+        		
 		    }
 		});
 
-#iagepyr<-icustom.plot(iagepyr.definition);
+iagepyr<-icustom.plot(iagepyr.definition);
