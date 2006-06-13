@@ -1,8 +1,6 @@
-.packageName <- "iplots"
-
 #==========================================================================
 # iplots - interactive plots for R
-# Package version: 0.2-1
+# Package version: 1.0-1
 #
 # $Id$
 # (C)Copyright 2003 Simon Urbanek
@@ -46,17 +44,20 @@
   cp<-paste(lib,pkg,"cont","iplots.jar",sep=.Platform$file.sep)
 
   .jinit(cp, silent=TRUE)
+
+  ipe <- as.environment(match("package:iplots", search()))
+  
   if ((exists(".iplots") && length(.iplots)>0))
     warning("iPlots currently don't support saving of sessions. Data belonging to iPlots from your previous session will be discarded.")
-  .iplots.fw<<-.jnew("org/rosuda/iplots/Framework")
+  assign(".iplots.fw", .jnew("org/rosuda/iplots/Framework"), ipe)
 
    # we need to reset everything for sanity reasons
-  .iset.selection<<-vector()
-  .isets<<-list()
+  assign(".iset.selection", vector(), ipe)
+  assign(".isets", list(), ipe)
   .isets[[1]]<<-list()
-  .iplots<<-list()
-  .iplot.curid<<-1
-  .iplot.current<<-NULL
+  ipe$.iplots<-list()
+  ipe$.iplot.curid<-1
+  ipe$.iplot.current<-NULL
 }
 
 # helpler function to identify a class in a strstr manner (not nice)
@@ -264,7 +265,6 @@ iplot.new <- function (plotObj) {
   }
   a<-list(id=(length(.iplots)+1),obj=plotObj)
   class(a)<-"iplot"
-  str(plotObj);
   attr(a,"iname")<-.jstrVal(.jcall(plotObj,"S","getTitle"))
   .iplot.current <<- .iplots[[.iplot.curid <<- (length(.iplots)+1)]] <<- a
 }
@@ -1116,4 +1116,4 @@ iagepyr.definition=list(name="Alterspyramide",min.data.dim=2,param=list(bin.widt
 		    }
 		});
 
-iagepyr<-icustom.plot(iagepyr.definition);
+#iagepyr<-icustom.plot(iagepyr.definition);
