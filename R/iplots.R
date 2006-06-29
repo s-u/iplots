@@ -1,12 +1,13 @@
 #==========================================================================
 # iplots - interactive plots for R
-# Package version: 1.0-1
+# Package version: 1.0-2
 #
 # $Id$
 # (C)Copyright 2003 Simon Urbanek
+# Authors: Simnon Urbanek, Alex Gouberman, Tobias Wichtrey
 #
 #==========================================================================
-# -- global variables:
+# -- global variables (in the package environment)
 # .iplots.fw     - framework object
 # .iplots        - list of iplot objects
 # .iplot.curid   - current plot ID
@@ -45,10 +46,16 @@
 
   .jinit(cp, silent=TRUE)
 
-  ipe <- as.environment(match("package:iplots", search()))
-  
-  if ((exists(".iplots") && length(.iplots)>0))
+  ## variables from iplots 0.x-x
+  ipv <- c(".iplots",".iplots.fw",".iset.selection",".isets",".iplot.curid",".iplot.current")
+  mipv <- match(ipv, ls(envir=.GlobalEnv, all.names=TRUE))
+  if (any(!is.na(mipv))) {
+    rm(list=ipv[!is.na(mipv)], envir=.GlobalEnv) 
     warning("iPlots currently don't support saving of sessions. Data belonging to iPlots from your previous session will be discarded.")
+  }
+
+  ipe <- as.environment(match("package:iplots", search()))
+
   assign(".iplots.fw", .jnew("org/rosuda/iplots/Framework"), ipe)
 
    # we need to reset everything for sanity reasons
@@ -60,7 +67,7 @@
   ipe$.iplot.current<-NULL
 }
 
-# helpler function to identify a class in a strstr manner (not nice)
+# helper function to identify a class in a strstr manner (not nice)
 .class.strstr <- function(o, class) {
   if (!inherits(o, "jobjRef")) return(FALSE);
   if (length(grep(class, .jclass(o)))>0) TRUE else FALSE
@@ -156,7 +163,7 @@ iset.new <- function(name=NULL) {
 }
 
 # create a new variable (undocumented!)
-ivar.new <- function (name,cont) {
+ivar.new <- function (name=deparse(substitute(cont)), cont) {
   if (!is.character(name) || length(name)>1)
     stop("variable name must be a single string")
   if(is.factor(cont) || is.character(cont)) {
@@ -204,16 +211,28 @@ ivar.data <- function(var) {
   if(.jcall(.iplots.fw,"I","varIsNum",vid)!=0) .jcall(.iplots.fw,"[D","getDoubleContent",vid) else as.factor(.jcall(.iplots.fw,"[S","getStringContent",vid))
 }
 
-# re-format the variable name to prevent collidsion with existing variables
+# re-format the variable name to prevent collision with existing variables
 .ivar.valid.name <- function(name) {
   as.character(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(name)))
 }
 
 # update contents of an existing variable (undocumented!)
-#ivar.update <- function (var,cont) {
-#  .Java(.iplots.fw,"replaceVar",vid,cont); .Java(.iplots.fw,"updateVars");
-#}
+ivar.update <- function (var, cont) {
+  if (!inherits(var, "ivar"))
+    stop("invalid variable")
+  if (is.factor(cont))
+    .jcall(.iplots.fw, "Lorg/rosuda/ibase/SVar;", "replaceVar",
+           var$vid, as.integer(unclass(cont)-1), levels(cont))
+  else if (is.numeric(cont) || is.character(cont))
+    .jcall(.iplots.fw, "Lorg/rosuda/ibase/SVar;", "replaceVar", var$vid, cont)
+  else {
+      vf <- factor(as.character(cont))
+      .jcall(.iplots.fw, "Lorg/rosuda/ibase/SVar;", "replaceVar",
+             var$vid, as.integer(unclass(vf)-1), levels(vf))
+    }
+}
 
+`<-.ivar` <- ivar.update
 
 #==========================================================================
 # iplot management functions
