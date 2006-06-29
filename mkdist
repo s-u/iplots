@@ -13,7 +13,7 @@ mkdir /tmp/iplots.java
 if [ -z $JARFILE ]; then
     JARFILE="../../../org/iplots.jar";
     rm -f $JARFILE
-    make -C ../../../org JFLAGS='-source 1.4 -target 1.4' iplots.jar
+    make -C ../../../org iplots.jar
 fi
 if [ ! -e $JARFILE ]; then
     echo "*** ERROR: cannot find iplots.jar in $JARFILE" >&2

@@ -7,11 +7,10 @@
   This function creates a new interactive mosaic plot from the given data.
 }
 \usage{
-imosaic(x, rotateYLabelsBy=90, ...)
+imosaic(vars, ...)
 }
 \arguments{
-  \item{x}{Data frame containing the variables.}
-  \item{rotateYLabelsBy}{The default value of this variable is changed here. For a description see \code{\link{iplot.opt}}.}
+  \item{vars}{list of variables/factors or a single variable/factor}
   \item{...}{All additional parameters are passed to
     \code{\link{iplot.opt}}. Many of the parameters used in
     \code{\link{plot}} are supported.
@@ -19,6 +18,13 @@ imosaic(x, rotateYLabelsBy=90, ...)
 }
 \value{
   Resulting plot object.
+}
+\details{
+  Additional parameters:
+  \describe{
+    \item{rotateYLabelsBy}{The default value of this variable is changed
+      here. For a description see \code{\link{iplot.opt}}.}
+  }
 }
 \seealso{
   \code{\link{ihist}}, \code{\link{ibar}}, \code{\link{iplot.list}},

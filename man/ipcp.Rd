@@ -7,12 +7,10 @@
   This function creates a new interactive parallel coordinates plot from the given data.
 }
 \usage{
-iplot(x, alterningLabels=TRUE, COL_AXES="white", ...)
+ipcp(vars, ...)
 }
 \arguments{
-  \item{x}{Data frame containing at least two variables.}
-  \item{alterningLabels}{Whether lables should be placed alternately at the top and at the bottom.}
-  \item{COL_AXES}{Color of the (optional) axes.}
+  \item{vars}{list of at least two variables}
   \item{...}{All additional parameters are passed to
     \code{\link{iplot.opt}}. Many of the parameters used in
     \code{\link{plot}} are supported.
@@ -21,6 +19,15 @@ iplot(x, alterningLabels=TRUE, COL_AXES="white", ...)
 \value{
   Resulting plot object.
 }
+\details{
+  Creates an interactive parallel coordinates plot.
+
+  Additional parameters:
+  \describe{
+    \item{alterningLabels}{Whether lables should be placed alternately at the top and at the bottom.}
+    \item{COL_AXES}{Color of the (optional) axes.}
+  }
+}   
 \seealso{
   \code{\link{ihist}}, \code{\link{ibar}}, \code{\link{iplot.list}},
   \code{\link{iplot.opt}}

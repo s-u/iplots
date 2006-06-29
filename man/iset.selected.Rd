@@ -2,6 +2,8 @@
 \alias{iset.selected}
 \alias{iset.select}
 \alias{iset.sel.changed}
+\alias{iset.selectAll}
+\alias{iset.selectNone}
 \title{
   Selection / linked highlighting
 }
@@ -17,11 +19,17 @@
   
   \code{\link{iset.sel.changed}} returns \code{TRUE} if the selection
   has changed since last call to this function.
+
+  \code{iset.selectAll} selects everything
+
+  \code{iset.selectNone} clears all selections (yes, not a good name)
 }
 \usage{
 iset.selected()
 iset.select(what, mode="replace", mark=TRUE)
 iset.sel.changed(iset=iset.cur())
+iset.selectAll()
+iset.selectNone()
 }
 \arguments{
   \item{what}{specification of the new selection. This can be either a

@@ -8,7 +8,7 @@
   creating corresponding connected lines or polygon in the current iPlot.
 }
 \usage{
-ilines(x,y,col=NULL,fill=NULL,visible=TRUE)
+ilines(x, y, col=NULL, fill=NULL, visible=NULL, plot = iplot.cur())
 }
 \arguments{
 \item{x, y}{Coordinate vectors of points to
@@ -19,9 +19,16 @@ ilines(x,y,col=NULL,fill=NULL,visible=TRUE)
   should be performed.}
 \item{visible}{If set to \code{FALSE} the lines/polygon won't be
   visible initially.}
+\item{plot}{parent plot for the lines}
 }
 \value{
   Resulting iObject.
+}
+\details{
+  The point vectors \code{x} and \code{y} can contain \code{NA} values,
+  in which case each sequence of points separated by \code{NA}s will be
+  treated as a separate polygon. \code{NA}s must be present in both
+  coordinates at the same index, otherwise the behavior is undefined.
 }
 \seealso{
   \code{\link{ihist}}, \code{\link{ibar}}, \code{\link{iplot.list}},

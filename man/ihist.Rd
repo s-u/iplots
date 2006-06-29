@@ -7,14 +7,14 @@
   This function creates a new interactive histogram from the given data.
 }
 \usage{
-ihist(var, ...)
+  ihist(var, ...)
 }
 \arguments{
   \item{var}{Vector of numbers or variable to use.}
   \item{...}{All additional parameters are passed to
     \code{\link{iplot.opt}}.}
 }
-\details {
+\details{
   Creates an interactive histogram.
 
   Additional parameters (also available via \code{\link{iplot.opt}}):

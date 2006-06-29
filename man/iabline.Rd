@@ -6,6 +6,9 @@
 \description{
   This function adds one straight line through the current iPlot.
 }
+\synopsis{
+iabline(a = NULL, b = NULL, reg = NULL, coef = NULL, ..., plot = iplot.cur())
+}
 \usage{
 iabline(a, b, ...)
 iabline(coef=, ...)

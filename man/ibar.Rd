@@ -7,18 +7,26 @@
   This function creates a new interactive bar chart from the given data.
 }
 \usage{
-ibar(var, drawTicks=FALSE, isSpine=FALSE, borderColorSel="black", ...)
+ibar(var, ...)
 }
 \arguments{
   \item{var}{Factor, vector of strings or variable to use.}
-  \item{drawTicks}{Whether ticks should be drawn.}
-  \item{isSpine}{Whether a spineplot should be created instead of a normal barchart.}
-  \item{borderColorSel}{Here this color defaults to black. See \code{\link{iplot.opt}} for details.}
   \item{...}{All additional parameters are passed to
     \code{\link{iplot.opt}}.}
 }
 \value{
   Resulting plot object.
+}
+\details{
+  Creates an interactive barchart or spline plot.
+
+  Additional parameters (also accessible via \code{\link{iplot.opt}}):
+  \describe{
+    \item{drawTicks}{Whether ticks should be drawn.}
+    \item{isSpine}{Whether a spineplot should be created instead of a normal barchart.}
+    \item{borderColorSel}{Here this color defaults to black. See
+      \code{\link{iplot.opt}} for details.}
+  }
 }
 \seealso{
   \code{\link{iplot}}, \code{\link{ihist}}, \code{\link{iplot.list}},

@@ -9,7 +9,7 @@
   \code{xy.coords(x,y)} is used for construction of the coordinates.
 }
 \usage{
-itext(x, y=NULL, labels=seq(along=x), ax=NULL, ay=NULL, ...)
+itext(x, y=NULL, labels=seq(along=x), ax=NULL, ay=NULL, ..., plot = iplot.cur())
 }
 \arguments{
 \item{x, y}{Coordinate vectors of the text. \code{\link{xy.coords}} is
@@ -22,6 +22,7 @@ itext(x, y=NULL, labels=seq(along=x), ax=NULL, ay=NULL, ...)
   and horizontally centered text can be obtained by using \code{ax=0.5}
   and \code{ay=0.5}.}
 \item{...}{any additional options are passed to \code{\link{iobj.opt}}}
+\item{plot}{parent plot}
 }
 \value{
   Resulting iObject.
