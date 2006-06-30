@@ -1,9 +1,9 @@
 Package: iplots
-Version: 0.1-2
+Version: 0.0-0
 Title: iPlots - interactive graphics for R
-Author: Simon Urbanek <simon.urbanek@math.uni-augsburg.de>
-Maintainer: Simon Urbanek <simon.urbanek@math.uni-augsburg.de>
-Depends: R (>= 1.5.0), rJava
-License: GPL version 2 or later, Java part see doc
+Author: Simon Urbanek <urbanek@research.att.com>, Tobias Wichtrey <tobias@tarphos.de>
+Maintainer: Simon Urbanek <urbanek@research.att.com>
+Depends: R (>= 1.5.0), rJava (>= 0.4-2)
+License: GPL version 2, Java part see doc
 Description: Interactive plots for R
-URL: http://stats.math.uni-augsburg.de/iPlots/
+URL: http://www.rosuda.org/iPlots/
