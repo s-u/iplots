@@ -6,6 +6,8 @@
 \alias{iobj.cur}
 \alias{iobj.get}
 \alias{iobj.rm}
+\alias{==.iobj}
+\alias{!=.iobj}
 \title{
 Interactive objects (iObjects) management functions.
 }
@@ -27,6 +29,8 @@ Interactive objects (iObjects) management functions.
   \code{\link{iobj.get}} returns the object specified by its ID.
   
   \code{\link{iobj.rm}} removes the object
+
+  \code{==} and \code{!=} operators can be used to compare two iObjects
 }
 \usage{
 iobj.list()
@@ -36,6 +40,8 @@ iobj.prev(which=iobj.cur())
 iobj.set(which=iobj.next())
 iobj.get(pos, plot=iplot.cur())
 iobj.rm(which=iobj.cur())
+==.iobj(a,b)
+!=.iobj(a,b)
 }
 \arguments{
   \item{which}{An object or an integer specifying the object number. }

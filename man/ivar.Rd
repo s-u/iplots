@@ -4,6 +4,7 @@
 \alias{ivar.new}
 \alias{ivar.update}
 \alias{iset.df}
+\alias{iset.updateVars}
 \title{
   Data (ivar) manipulation functions
 }
