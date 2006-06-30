@@ -12,7 +12,7 @@ ilines(x, y, col=NULL, fill=NULL, visible=NULL, plot = iplot.cur())
 }
 \arguments{
 \item{x, y}{Coordinate vectors of points to
-  join. \code{\link{xy.coords}} is used to obtain the coordinates for plotting.}\item{col}{Drawing color of the lines. Currently only "#rrggbb"
+  join. \code{\link{xy.coords}} is used to obtain the coordinates for plotting.}\item{col}{Drawing color of the lines. Currently only \code{"#rrggbb"}
   notation and named colors are supported. \code{NULL} means that color
   of the object is not explicitely specified.}
 \item{fill}{Color of the polygon area or \code{NA} if no filling

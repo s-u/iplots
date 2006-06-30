@@ -25,11 +25,17 @@ ievent.wait()
   object if some other event occured.
 }
 \examples{
+  data(iris)
+  attach(iris)
+  iplot(Sepal.Length, Petal.Length)
+
   d<-iplot.data()
 
   iabline(lm(d$y ~ d$x), col = "red")
   ilines(lowess(d$x,d$y), col = "#0000c0")
   ilines(c(0,0),c(0,0), col = "marked", visible = FALSE)
+
+  cat("Select 'Break' from the menu of any plot to return back to R.\n")
 
   while (!is.null(ievent.wait())) {
     if (iset.sel.changed()) {
@@ -40,5 +46,6 @@ ievent.wait()
     }
   }
   for(i in 1:3) iobj.rm()
+  iplot.off()
 }
 \keyword{hplot}

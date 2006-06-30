@@ -29,7 +29,7 @@
   \describe{
     \item{changePtDiamBy}{Number of pixels the point diameter should be changed when in-/decreasing it via keyboard or menu.}
     \item{customFieldBg}{Whether to use a custom background color.}
-    \item{COL_CUSTOMBG}{The custom background color.}
+    \item{\code{COL_CUSTOMBG}}{The custom background color.}
     \item{drawAxes}{Whether axes should be drawn.}
     \item{equiscale}{Whether the same scale should be applied to both axes.}
     \item{minimalDiam}{Minimal point diameter.}

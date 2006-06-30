@@ -24,8 +24,8 @@ ipcp(vars, ...)
 
   Additional parameters:
   \describe{
-    \item{alterningLabels}{Whether lables should be placed alternately at the top and at the bottom.}
-    \item{COL_AXES}{Color of the (optional) axes.}
+    \item{\code{alterningLabels}}{Whether lables should be placed alternately at the top and at the bottom.}
+    \item{\code{COL_AXES}}{Color of the (optional) axes.}
   }
 }   
 \seealso{

@@ -22,9 +22,9 @@ ibar(var, ...)
 
   Additional parameters (also accessible via \code{\link{iplot.opt}}):
   \describe{
-    \item{drawTicks}{Whether ticks should be drawn.}
-    \item{isSpine}{Whether a spineplot should be created instead of a normal barchart.}
-    \item{borderColorSel}{Here this color defaults to black. See
+    \item{\code{drawTicks}}{Whether ticks should be drawn.}
+    \item{\code{isSpine}}{Whether a spineplot should be created instead of a normal barchart.}
+    \item{\code{borderColorSel}}{Here this color defaults to black. See
       \code{\link{iplot.opt}} for details.}
   }
 }
