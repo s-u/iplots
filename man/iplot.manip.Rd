@@ -68,5 +68,6 @@ print.iplot(x, ...)
   \item{y2}{edge coordinate for the \code{y} axis}
   \item{x}{object to print}
   \item{y}{unused}
+  \item{...}{additional parameters}
 }
 \keyword{hplot}

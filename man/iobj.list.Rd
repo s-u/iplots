@@ -40,8 +40,8 @@ iobj.prev(which=iobj.cur())
 iobj.set(which=iobj.next())
 iobj.get(pos, plot=iplot.cur())
 iobj.rm(which=iobj.cur())
-==.iobj(a,b)
-!=.iobj(a,b)
+`==.iobj`(a,b)
+`!=.iobj`(a,b)
 }
 \arguments{
   \item{which}{An object or an integer specifying the object number. }
