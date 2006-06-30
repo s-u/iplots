@@ -3,8 +3,8 @@
 # Package version: 1.0-2
 #
 # $Id$
-# (C)Copyright 2003 Simon Urbanek
-# Authors: Simnon Urbanek, Alex Gouberman, Tobias Wichtrey
+# (C)Copyright 2003-6 Simon Urbanek, 2006 Tobias Wichtrey
+# Authors: Simon Urbanek, Tobias Wichtrey, Alex Gouberman
 #
 #==========================================================================
 # -- global variables (in the package environment)
