@@ -35,6 +35,10 @@
 # initialization
 #==========================================================================
 
+# we have parts that require user interaction and so
+# must be disabled during make check
+.inside.make.check <- function() ("CheckExEnv" %in% search())
+
 # library initialization: Add "<iplots>/cont/iplots.jar" to classpath,
 # initialize Java and create an instance on the Framework "glue" class
 .First.lib <- function(lib, pkg) {
@@ -65,6 +69,8 @@
   ipe$.iplots<-list()
   ipe$.iplot.curid<-1
   ipe$.iplot.current<-NULL
+
+  if (.inside.make.check()) .jcall(.iplots.fw,, "setNoInteractionFlag", TRUE)
 }
 
 # helper function to identify a class in a strstr manner (not nice)
@@ -984,6 +990,10 @@ iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ..., plot=iplot.cur()) 
 }
 
 ievent.wait <- function() {
+  if (.inside.make.check()) {
+    cat("NOTE: ievent.wait is likely being run from within `make check', returning NULL to prevent `make check' from stalling.\n")
+    return(NULL)
+  }
   msg<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/NotifyMsg;","eventWait")
   if (!is.null(msg)) {
     o<-list(obj=msg,msg=.jcall(msg,"I","getMessageID"),cmd=.jcall(msg,"S","getCommand"),pars=.jcall(msg,"I","parCount"))
