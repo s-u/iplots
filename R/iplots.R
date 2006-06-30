@@ -737,7 +737,7 @@ iobj.cur <- function(plot = .iplot.current) {
 
 .iobj.equal <- function(a,b) {
   if (!inherits(a,"iobj") || !inherits(b,"iobj")) stop("wrong types to compare")
-  (!is.null(a) && !is.null(b)) && .jcall(a$obj,"Z","equals",.jcast(b$obj,"java/lang/Object")))
+  (!is.null(a) && !is.null(b) && .jcall(a$obj,"Z","equals",.jcast(b$obj,"java/lang/Object")))
 }
 
 `==.iobj` <- .iobj.equal
