@@ -735,6 +735,34 @@ iobj.cur <- function(plot = .iplot.current) {
   }
 }
 
+.iobj.equal <- function(a,b) {
+  if (!inherits(a,"iobj") || !inherits(b,"iobj")) error("wrong types to compare")
+  (!is.null(a) && !is.null(b)) && .jcall(a$obj,"Z","equals",.jcast(b$obj,"java/lang/Object")))
+}
+
+`==.iobj` <- .iobj.equal
+`!=.iobj` <- function(a,b) !.iobj.equal(a,b)
+
+iobj.next <- function(which=iobj.cur()) {
+  l <- iobj.list()
+  if (length(l) == 0) return(numeric())
+  if (length(l) == 1) return(1)
+  if (inherits(which, "iobj")) which <- base::which(unlist(lapply(l,.iobj.equal,which)))
+  which <- if (length(which) != 1) 1 else which + 1
+  which <- ((which-1) %% length(l)) + 1
+  which
+}
+
+iobj.prev <- function(which=iobj.cur()) {
+  l <- iobj.list()
+  if (length(l) == 0) return(numeric())
+  if (length(l) == 1) return(1)
+  if (inherits(which, "iobj")) which <- base::which(unlist(lapply(l,.iobj.equal,which)))
+  which <- if (length(which) != 1) 1 else which - 1
+  which <- ((which-1) %% length(l)) + 1
+  which
+}
+
 .iplot.get.by.pm <-function (which) { # get plot from the list by pm entry
   for (i in .iplots)
     if (i$pm == which) return(i)
