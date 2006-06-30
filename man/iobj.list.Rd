@@ -47,6 +47,8 @@ iobj.rm(which=iobj.cur())
   \item{which}{An object or an integer specifying the object number. }
   \item{pos}{ID of an object}
   \item{plot}{plot whose object is to be retrieved.}
+  \item{a}{object to compare}
+  \item{b}{object to compare}
 }
 \seealso{
   \code{\link{ilines}}, \code{\link{iabline}}
