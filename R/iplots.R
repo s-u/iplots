@@ -48,7 +48,7 @@
     Sys.putenv("DYLD_LIBRARY_PATH"=gsub("/usr/X11R6/lib","",dlp))
   cp<-paste(lib,pkg,"cont","iplots.jar",sep=.Platform$file.sep)
 
-  .jinit(cp, silent=TRUE)
+  .jinit(cp, parameters="-Xmx512m", silent=TRUE)
 
   ## variables from iplots 0.x-x
   ipv <- c(".iplots",".iplots.fw",".iset.selection",".isets",".iplot.curid",".iplot.current")
