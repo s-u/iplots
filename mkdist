@@ -9,7 +9,8 @@ cp -r ../iplots /tmp
 rm -rf /tmp/iplots.java
 mkdir /tmp/iplots.java
 
-: ${JARFILE=$1}
+JARFILE=$1
+
 if [ -z $JARFILE ]; then
     JARFILE="../../../org/iplots.jar";
     rm -f $JARFILE
