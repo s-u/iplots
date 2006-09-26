@@ -1,5 +1,7 @@
 #!/bin/sh
 
+: ${JFLAGS=-target 1.4 -source 1.4}
+
 SWD=`pwd`
 echo "Removing previous dist ..."
 rm -rf /tmp/iplots
@@ -65,7 +67,8 @@ echo "Adjust version number and re-compile Common.java ..."
 cat Common.java | sed "s/Version=\"[0-9]*.[0-9]*\"/Version=\"${VER}\"/" > c
 rm Common.java
 mv c org/rosuda/ibase/Common.java
-javac org/rosuda/ibase/Common.java
+echo "javac $JFLAGS org/rosuda/ibase/Common.java"
+javac $JFLAGS org/rosuda/ibase/Common.java
 #echo Compiling sources ...
 #javac -O *.java
 echo Creating archive ...
