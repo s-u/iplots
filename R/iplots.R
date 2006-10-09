@@ -1,6 +1,6 @@
 #==========================================================================
 # iplots - interactive plots for R
-# Package version: 1.0-4
+# Package version: 1.0-5
 #
 # $Id$
 # (C)Copyright 2003-6 Simon Urbanek, 2006 Tobias Wichtrey
@@ -44,7 +44,7 @@
 .First.lib <- function(lib, pkg) {
   require(rJava)
   dlp<-Sys.getenv("DYLD_LIBRARY_PATH")
-  if (dlp!="") # for Mac OS X we need to remove X11 from lib-path
+  if (nchar(dlp)) # for Mac OS X we need to remove X11 from lib-path
     Sys.putenv("DYLD_LIBRARY_PATH"=gsub("/usr/X11R6/lib","",dlp))
   cp<-paste(lib,pkg,"cont","iplots.jar",sep=.Platform$file.sep)
 
@@ -60,7 +60,7 @@
 
   ipe <- as.environment(match("package:iplots", search()))
 
-  assign(".iplots.fw", if (nchar(Sys.getenv("NOAWT"))>0) NULL else .jnew("org/rosuda/iplots/Framework"), ipe)
+  assign(".iplots.fw", if (nchar(Sys.getenv("NOAWT"))) NULL else .jnew("org/rosuda/iplots/Framework"), ipe)
 
    # we need to reset everything for sanity reasons
   assign(".iset.selection", vector(), ipe)
@@ -70,13 +70,13 @@
   ipe$.iplot.curid<-1
   ipe$.iplot.current<-NULL
 
-  if (.inside.make.check()) .jcall(.iplots.fw,, "setNoInteractionFlag", TRUE)
+  if (.inside.make.check() || nchar(Sys.getenv("NOAWT"))) .jcall(.iplots.fw,, "setNoInteractionFlag", TRUE)
 }
 
 # helper function to identify a class in a strstr manner (not nice)
 .class.strstr <- function(o, class) {
   if (!inherits(o, "jobjRef")) return(FALSE);
-  if (length(grep(class, .jclass(o)))>0) TRUE else FALSE
+  if (length(grep(class, .jclass(o)))) TRUE else FALSE
 }
 
 #==========================================================================
@@ -102,7 +102,7 @@ iset.set <- function(which = iset.next()) {
     ci
   } else {
     if (!is.numeric(which))
-      stop("The 'which' parameter mut be a name or an ID.")
+      stop("The 'which' parameter must be a name or an ID.")
 
     nso<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","selectSet",as.integer(which-1))
     if (is.null(nso))
@@ -265,8 +265,28 @@ iplot.list <- function () {
 }
 
 iplot.off <- function(plot=iplot.cur()) {
-  if (length(.iplots)==0) return()
+  if (length(.iplots)==0) {
+    if (inherits(plot, "iplot")) {
+      warning("Plot is not on the plot list (which is empty), attempting to close anyway.")
+      .iplot.close(plot)
+    }
+    return()
+  }
 
+  if (inherits(plot,"iplot")) {
+    po <- .jcast(plot$obj, "java/lang/Object")
+    for (i in 1:length(.iplots))
+      if (.jcall(.iplots[[i]]$obj, "Z", "equals", po)) {
+        plot <- i
+        break
+      }
+    if (!is.integer(plot)) {
+      warning("Plot is not on the plot list, attempting to close anyway.")
+      .iplot.close(plot)
+      return()
+    }
+  }
+  
   j<-list()
   k <- 1
   for (i in 1:length(.iplots))
@@ -705,7 +725,18 @@ iset.updateVars <- function() { .jcall(.iplots.fw,"V","updateVars"); }
   a
 }
 
-iobj.list <- function(plot = .iplot.current) {
+.get.plot.obj <- function(plot) {
+  if (is.numeric(plot))
+    plot <- .iplots[[plot]]
+  if (is.null(plot))
+    stop("There is such plot")
+  if (!inherits(plot, "iplot"))
+    stop("Invalid plot object")
+  plot
+}
+
+iobj.list <- function(plot = iplot.cur()) {
+  plot <- .get.plot.obj(plot)
   pm<-.jcall(plot$obj,"Lorg/rosuda/ibase/toolkit/PlotManager;","getPlotManager")
   i<-.jcall(pm,"I","count")
   l<-list()
@@ -720,7 +751,7 @@ iobj.list <- function(plot = .iplot.current) {
 }
 
 iobj.get <- function(pos, plot = iplot.cur()) {
-  if (is.numeric(plot)) plot<-.iplots[[plot]]
+  plot <- .get.plot.obj(plot)
   if (!inherits(plot,"iplot"))
     stop("The specified plot is no iplot")
   pm<-.jcall(plot$obj,"Lorg/rosuda/ibase/toolkit/PlotManager;","getPlotManager")
@@ -729,7 +760,8 @@ iobj.get <- function(pos, plot = iplot.cur()) {
   a
 }
 
-iobj.cur <- function(plot = .iplot.current) {
+iobj.cur <- function(plot = iplot.cur()) {
+  plot <- .get.plot.obj(plot)
   pm<-.jcall(plot$obj,"Lorg/rosuda/ibase/toolkit/PlotManager;","getPlotManager")
   oo<-.jcall(pm,"Lorg/rosuda/ibase/toolkit/PlotObject;","getCurrentObject");
   if (is.null(oo)) {
@@ -749,8 +781,9 @@ iobj.cur <- function(plot = .iplot.current) {
 `==.iobj` <- .iobj.equal
 `!=.iobj` <- function(a,b) !.iobj.equal(a,b)
 
-iobj.next <- function(which=iobj.cur()) {
-  l <- iobj.list()
+iobj.next <- function(which=iobj.cur(), plot = iplot.cur()) {
+  plot <- .get.plot.obj(plot)
+  l <- iobj.list(plot)
   if (length(l) == 0) return(numeric())
   if (length(l) == 1) return(1)
   if (inherits(which, "iobj")) which <- base::which(unlist(lapply(l,.iobj.equal,which)))
@@ -759,8 +792,9 @@ iobj.next <- function(which=iobj.cur()) {
   which
 }
 
-iobj.prev <- function(which=iobj.cur()) {
-  l <- iobj.list()
+iobj.prev <- function(which=iobj.cur(), plot = iplot.cur()) {
+  plot <- .get.plot.obj(plot)
+  l <- iobj.list(plot)
   if (length(l) == 0) return(numeric())
   if (length(l) == 1) return(1)
   if (inherits(which, "iobj")) which <- base::which(unlist(lapply(l,.iobj.equal,which)))
@@ -775,12 +809,13 @@ iobj.prev <- function(which=iobj.cur()) {
   NULL;
 }
 
-iobj.rm <- function(which=iobj.cur()) {
+iobj.rm <- function(which=iobj.cur(), plot = iplot.cur()) {
+  plot <- .get.plot.obj(plot)
   if (is.vector(which) && (inherits(which[1],"iobj") || is.numeric(which))) {
-    for (i in which) iobj.rm(i)
+    for (i in which) iobj.rm(i, plot=plot)
     return()
   }
-  if (is.numeric(which)) which<-iobj.get(which)
+  if (is.numeric(which)) which<-iobj.get(which, plot=plot)
   .jcall(which$pm,"V","rm",.jcast(which$obj,"org/rosuda/ibase/toolkit/PlotObject"))
   which$plot$curobj<-.jcall(which$pm,"I","count")
   .jcall(which$pm,"V","update")
@@ -803,26 +838,23 @@ iobj.rm <- function(which=iobj.cur()) {
 }
 
 itext <- function(x, y=NULL, labels=seq(along=x), ax=NULL, ay=NULL, ..., plot=iplot.cur()) {
-  if (is.numeric(plot)) plot<-.iplots[[plot]]
-  if (!inherits(plot,"iplot")) {
-    stop("There is no current plot")
-  } else {
-    pt<-.iobj.new(plot,"PlotText")
-    c<-xy.coords(x,y,recycle=TRUE)
-    iobj.opt(pt,x=c$x,y=c$y,ax=ax,ay=ay,txt=labels)
-    if (length(list(...))>0)
-      iobj.opt(pt,...)
-    pt
-  }
+  plot <- .get.plot.obj(plot)
+
+  pt<-.iobj.new(plot,"PlotText")
+  c<-xy.coords(x,y,recycle=TRUE)
+  iobj.opt(pt,x=c$x,y=c$y,ax=ax,ay=ay,txt=labels)
+  if (length(list(...))>0)
+    iobj.opt(pt,...)
+  pt
 }
 
-.iobj.opt.get.PlotText <- function(o) {
-  return(list(x=.jcall(o$obj,"[D","getX",evalArray=TRUE),
-              y=.jcall(o$obj,"[D","getY",evalArray=TRUE),
-              ax=.jcall(o$obj,"[D","getAX",evalArray=TRUE),
-              ay=.jcall(o$obj,"[D","getAY",evalArray=TRUE),
-              txt=.jstrVal(.jcall(o$obj,"S","getText"))))
-}
+.iobj.opt.get.PlotText <- function(o)
+  list(x=.jcall(o$obj,"[D","getX",evalArray=TRUE),
+       y=.jcall(o$obj,"[D","getY",evalArray=TRUE),
+       ax=.jcall(o$obj,"[D","getAX",evalArray=TRUE),
+       ay=.jcall(o$obj,"[D","getAY",evalArray=TRUE),
+       txt=.jstrVal(.jcall(o$obj,"S","getText")))
+
 
 iobj.opt <- function(o=iobj.cur(),...) {
   if (is.list(o) && inherits(o[[1]],"iobj")) {
@@ -909,27 +941,23 @@ print.iobj <- function(x, ...) {
 }
 
 ilines <- function(x,y=NULL,col=NULL,fill=NULL,visible=NULL,plot=iplot.cur()) {
-  if (is.numeric(plot)) plot<-.iplots[[plot]]
-  if (!inherits(plot,"iplot")) {
-    stop("There is no current plot")
-  } else {
-    .co<-xy.coords(x,y)
-    x<-.co$x
-    y<-.co$y
-    if (length(x)==1 && length(y)==1) {
-      x<-c(x,x)
-      y<-c(y,y)
-    }
-    pp<-.iobj.new(plot,"PlotPolygon")
-    .jcall(pp$obj,"V","set",as.numeric(x),as.numeric(y))
-    if (!is.null(col) || !is.null(fill))
-      .iobj.color(pp,col,fill) # includes "update"
-    else
-      .jcall(pp$obj,"V","update")
+  plot <- .get.plot.obj(plot)
+  .co<-xy.coords(x,y)
+  x<-.co$x
+  y<-.co$y
+  if (length(x)==1 && length(y)==1) {
+    x<-c(x,x)
+    y<-c(y,y)
+  }
+  pp<-.iobj.new(plot,"PlotPolygon")
+  .jcall(pp$obj,"V","set",as.numeric(x),as.numeric(y))
+  if (!is.null(col) || !is.null(fill))
+    .iobj.color(pp,col,fill) # includes "update"
+  else
+    .jcall(pp$obj,"V","update")
     if (!is.null(visible))
       .jcall(pp$obj,"V","setVisible",visible)
-    pp
-  }
+  pp
 }
 
 .iabline.AB <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ...) {
@@ -953,22 +981,18 @@ ilines <- function(x,y=NULL,col=NULL,fill=NULL,visible=NULL,plot=iplot.cur()) {
 }
 
 iabline <- function(a=NULL, b=NULL, reg=NULL, coef=NULL, ..., plot=iplot.cur()) {
-  if (is.numeric(plot)) plot<-.iplots[[plot]]
+  plot <- .get.plot.obj(plot)
   l<-.iabline.AB(a,b,reg,coef)
   a<-l$a
   b<-l$b
-  if (is.null(plot) || !inherits(plot,"iplot")) {
-    stop("There is no current plot")
+  ax<-.jcall(plot$obj,"Lorg/rosuda/ibase/toolkit/Axis;","getXAxis")
+  if (is.null(ax)) {
+    stop("The plot has no X axis")
   } else {
-    ax<-.jcall(plot$obj,"Lorg/rosuda/ibase/toolkit/Axis;","getXAxis")
-    if (is.null(ax)) {
-      stop("The plot has no X axis")
-    } else {
-      r<-.jcall(ax,"[D","getValueRange",evalArray=TRUE)
-      mi<-min(r)
-      mx<-max(r)
-      ilines(c(mi,mx),c(a+b*mi,a+b*mx),...,plot=plot)
-    }
+    r<-.jcall(ax,"[D","getValueRange",evalArray=TRUE)
+    mi<-min(r)
+    mx<-max(r)
+    ilines(c(mi,mx),c(a+b*mi,a+b*mx),...,plot=plot)
   }
 }
 
