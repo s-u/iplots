@@ -355,12 +355,12 @@ iplot.off <- function(plot=iplot.cur()) {
 
 # this function should not be called directly by the user
 # is creates a new R iplot-object for an existing Java plot object
-.iplot.new <- function (plotObj) {
+.iplot.new <- function (plotObj, class) {
   if (!exists(".iplots")) {
     .iplots <<- list()
   }
   a<-list(id=(length(.iplots)+1),obj=plotObj)
-  class(a)<-"iplot"
+  class(a)<-c("iplot", class)
   attr(a,"iname")<-.jstrVal(.jcall(plotObj,"S","getTitle"))
   .iplot.current <<- .iplots[[.iplot.curid <<- (length(.iplots)+1)]] <<- a
 }
@@ -381,19 +381,19 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
 .iplot.setYaxis <- function(ipl,x1,x2) { .jcall(.jcall(ipl,"Lorg/rosuda/ibase/toolkit/Axis;","getYAxis"),"Z","setValueRange",x1,x2-x1); }
 
 .iplot.iPlot <- function (x,y,...) {
-  a<-.iplot.new(.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ScatterCanvas;","newScatterplot",x$vid,y$vid))
+  a<-.iplot.new(.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ScatterCanvas;","newScatterplot",x$vid,y$vid), "ixyplot")
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
 }
 
 .iplot.iHist <- function (var, ...) {
-  a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/HistCanvas;","newHistogram",var$vid))
+  a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/HistCanvas;","newHistogram",var$vid),"ihist")
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
 }
 
 .iplot.iBar  <- function (var, ...) {
-  a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/BarCanvas;","newBarchart",var$vid))
+  a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/BarCanvas;","newBarchart",var$vid),"ibar")
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
 }
@@ -407,11 +407,11 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
       else
         vv<-c(vv,v)
     }
-    a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",as.integer(vv)))    
+    a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",as.integer(vv)),"iboxplot")
   }
   else {
-    if (is.null(y)) a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",x$vid))
-    else a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",x$vid,y$vid))
+    if (is.null(y)) a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",x$vid),"iboxplot")
+    else a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",x$vid,y$vid),"iboxplot")
   }
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
@@ -427,7 +427,7 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
   }
   if (length(vv)<2)
     stop("At least 2 valid variables are necessary for a hammock plot")
-  a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/HamCanvas;","newHammock",as.integer(vv)))
+  a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/HamCanvas;","newHammock",as.integer(vv)),"ihammock")
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
 }
@@ -442,12 +442,12 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
   }
   if (length(vv)<2)
     stop("At least 2 valid variables are necessary for a pcp plot")
-  a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newPCP",as.integer(vv)))
+  a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newPCP",as.integer(vv)),"ipcp")
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
 }
 
-.iplot.iMosaic <- function (vars, ...,) {
+.iplot.iMosaic <- function (vars, ...) {
   vv<-vector()
   for (v in vars) {
     if (inherits(v, "ivar"))
@@ -457,7 +457,7 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
   }
   if (length(vv)<2)
     stop("At least 2 valid variables are necessary for a mosaic plot")
-  a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/MosaicCanvas;","newMosaic",as.integer(vv)))
+  a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/MosaicCanvas;","newMosaic",as.integer(vv)),"imosaic")
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
 }
@@ -487,9 +487,9 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
     vars <- l
     sl <- substitute(list(...))
     sl[[1]] <- NULL
-    sl[[names(l)!=""]] <- NULL
-    vars[[names(l)!=""]] <- NULL
-    opts[[names(opts)==""]] <- NULL
+    sl[names(l)!=""] <- NULL
+    vars[names(l)!=""] <- NULL
+    opts[names(opts)==""] <- NULL
     if (length(vars)==1 && is.list(vars[[1]]))
       vars <- vars[[1]]
     else
@@ -659,6 +659,17 @@ iplot.opt <- function(..., plot=iplot.cur()) {
   repaint = FALSE
 
   optlist <- list(...)
+
+  # now, this is ugly, we should use proper class dispatch
+  if (inherits(plot, "imosaic")) {
+    if (!is.null(optlist$type)) {
+      t <- pmatch(optlist$type,c("observed","expected","fluctuation","same.bin.size","multiple.barcharts"))
+      if (any(is.na(t))) stop("Invalid type for imosaic")
+      .jcall(plot$obj, "Ljava/lang/Object;","run",.jcast(.iplots.fw,"java.lang.Object"), c("observed","expected","fluctuation","samebinsize","multiplebarcharts")[t])
+      optlist$type <- NULL
+    }
+  }
+  
   if(length(optlist)) {
     for(i in 1:length(optlist)) .jcall(plot$obj,"V","setOption",names(optlist)[i],optlist[[i]])
     repaint = TRUE
