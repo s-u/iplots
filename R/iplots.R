@@ -104,7 +104,7 @@ iset.set <- function(which = iset.next()) {
     if (!is.numeric(which))
       stop("The 'which' parameter must be a name or an ID.")
 
-    nso<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","selectSet",as.integer(which-1))
+    nso<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","selectSet",as.integer(which-1:1))
     if (is.null(nso))
       stop("Invalid iSet ID.")
     ci<-.jcall(.iplots.fw,"I","curSetId")+1
@@ -122,7 +122,7 @@ iset.cur <- function() {
 iset.next <- function(which=iset.cur()) {
   if (!is.numeric(which))
     stop("'which' must be a number.")
-  w<-as.integer(which)-1
+  w<-as.integer(which)-1:1
   t<-.jcall(.iplots.fw,"I","countSets")
   ((w+1) %% t)+1
 }
@@ -130,16 +130,16 @@ iset.next <- function(which=iset.cur()) {
 iset.prev <- function(which=iset.cur()) {
   if (!is.numeric(which))
     stop("'which' must be a number.")
-  w<-as.integer(which)-1
+  w<-as.integer(which)-1:1
   t<-.jcall(.iplots.fw,"I","countSets")
-  ((w-1) %% t)+1
+  ((w-1:1) %% t)+1
 }
 
 iset.list <- function() {
   tot<-.jcall(.iplots.fw,"I","countSets")
   l<-vector()
   for (i in 1:tot)
-    l[.jstrVal(.jcall(.iplots.fw,"S","getSetName",as.integer(i-1)))]<-i
+    l[.jstrVal(.jcall(.iplots.fw,"S","getSetName",as.integer(i-1:1)))]<-i
   l
 }
 
@@ -158,22 +158,72 @@ iset.new <- function(name=NULL) {
   ci
 }
 
+iset <- function(which=iset.cur()) {
+  if (!is.numeric(which)) {
+    which <- .jcall(.iplots.fw, "I", "getSetIdByName", as.character(which)[1])
+    if (which<0) stop("iSet of that name doesn't exist")
+  } else which <- which - 1:1
+  so <- .jcall(.iplots.fw, "Lorg/rosuda/ibase/SVarSet;", "getSet", as.integer(which))
+  if (is.jnull(so)) stop("iSet not found")
+  structure(list(obj=so, name=.jcall(so, "S", "getName")), class="iset")
+}
+
+# ivar object constructor
+.new.ivar <- function(vid, name, obj, iset=iplots::iset()) structure(list(vid=vid, name=name, obj=obj, iset=iset), class="ivar")
+
+# iset accessor
+"$.iset" <- function(x, name) {
+  vid <- .jcall(unclass(x)$obj, "I", "indexOf", name)
+  if (vid<0) return(NULL)
+  vobj <- .jcall(unclass(x)$obj, "Lorg/rosuda/ibase/SVar;", "at", vid)
+  if (is.jnull(vobj)) return (NULL)
+  .new.ivar(vid=vid, name=.jcall(vobj, "S", "getName"), obj=vobj, iset=x)
+}
+
+"[[.iset" <- function(x, i) {
+  vid <- if (is.numeric(i)) as.integer(-0.5) else .jcall(unclass(x)$obj, "I", "indexOf", i)
+  if (vid<0) return(NULL)
+  vobj <- .jcall(unclass(x)$obj, "Lorg/rosuda/ibase/SVar;", "at", vid)
+  if (is.jnull(vobj)) return (NULL)
+  .new.ivar(vid=vid, name=.jcall(vobj, "S", "getName"), obj=vobj, iset=x)
+}
+
+print.iset <- function (x, ...) {
+  xo <- unclass(x)$obj
+  vc <- .jcall(xo, "I", "count")
+  vl <- vector()
+  if (vc>0) vl <- unlist(lapply(as.integer(0:(vc-1)),function(x) .jcall(.jcall(xo,"Lorg/rosuda/ibase/SVar;","at",x),"S","getName")))
+  print(paste("iSet[",.jcall(xo,"S","getName"),"]{",paste(vl,collapse=','),"}",sep=''),...)
+}
+
+print.ivar <- function(x, ...) {
+  print(paste("iVar{",.jcall(x$obj,"S","getName")," from ",unclass(x$iset)$name,"}",sep=''),...)
+}
+
 #==========================================================================
 # variables handling (iVar)
 #==========================================================================
 
 .ivar.check.length <- function(cont) {
   dsl <- .jcall(.iplots.fw,"I","getCurVarSetLength")
-  if (dsl>0 && length(cont)!=dsl)
-    cat("iSet and data length differ. Please observe the dialog box (it may be hidden by the R window).\n");
+  if (dsl>0 && length(cont)!=dsl) {
+    cat("iSet and data length differ. Please observe the dialog box (it may be hidden by the R window).\n")
+    flush.console()
+  }
 }
+
+# re-format the variable name to prevent collision with existing variables
+#.ivar.valid.name <- function(name) {
+#  as.character(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(name)))
+#}
+
 
 # create a new variable (undocumented!)
 ivar.new <- function (name=deparse(substitute(cont)), cont) {
   if (!is.character(name) || length(name)>1)
     stop("variable name must be a single string")
   if(is.factor(cont) || is.character(cont)) {
-    cont<-as.factor(cont)
+    cont <- as.factor(cont)
     .ivar.check.length(cont)
     id<-.jcall(.iplots.fw,"I","newVar",name,as.integer(cont),as.character(levels(cont)))
     if (id==-2) stop("Operation canceled by user.")
@@ -187,58 +237,57 @@ ivar.new <- function (name=deparse(substitute(cont)), cont) {
       vobj<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVar;","getVar",id)
       .jcall(.jcast(vobj,"org/rosuda/ibase/SVarFixFact"),"V","createMissingsCat")
       .jcall(vobj,"V","categorize",TRUE)
-      v<-list(vid=id,name=name,obj=vobj)
-      class(v)<-"ivar"
-      return(v)
+      return(.new.ivar(vid=id,name=.jcall(vobj,"S","getName"),obj=vobj))
     }
     return (NULL)
   }
+  if (!is.numeric(cont)) stop("iSet can handle only factors, numeric, integer and character vectors.")
   .ivar.check.length(cont)
-  id<-.jcall(.iplots.fw,"I","newVar",name,cont)
+  id<-.jcall(.iplots.fw,"I","newVar",name,.jarray(cont))
   if (id==-2) stop("Operation canceled by user.")
   if (id==-3) {
     iset.new()
-    id<-.jcall(.iplots.fw,"I","newVar",name,cont)
+    id<-.jcall(.iplots.fw,"I","newVar",name,.jarray(cont))
     if (id<0)
       stop("Unable to create an iVariable");
   }
   if (id>=0) {
-    v<-list(vid=id,name=name,obj=.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVar;","getVar",id))
-    class(v)<-"ivar"
-    return(v)
-  }
-  return(NULL);
+    o <- .jcall(.iplots.fw,"Lorg/rosuda/ibase/SVar;","getVar",id)
+    .new.ivar(vid=id,name=.jcall(o,"S","getName"),obj=o)
+  } else NULL
 }
 
+# retrieve data back to R
 ivar.data <- function(var) {
   if (!inherits(var,"ivar"))
     stop("parameter is not an iVariable.")
-  vid<-as.integer(var$id)
+  vid<-as.integer(var$vid)
   if(.jcall(.iplots.fw,"I","varIsNum",vid)!=0) .jcall(.iplots.fw,"[D","getDoubleContent",vid) else as.factor(.jcall(.iplots.fw,"[S","getStringContent",vid))
-}
-
-# re-format the variable name to prevent collision with existing variables
-.ivar.valid.name <- function(name) {
-  as.character(.jcall(.iplots.fw,"S","getNewTmpVar",as.character(name)))
 }
 
 # update contents of an existing variable (undocumented!)
 ivar.update <- function (var, cont, batch = FALSE) {
+  r <- -1
   if (!inherits(var, "ivar"))
     stop("invalid variable")
   if (is.factor(cont))
-    .jcall(.iplots.fw, "I", "replaceVar",
-           var$vid, as.integer(unclass(cont)-1), levels(cont))
+    r <- .jcall(.iplots.fw, "I", "replaceVar",
+                var$vid, as.integer(unclass(cont)-1:1), levels(cont))
   else if (is.numeric(cont) || is.character(cont))
-    .jcall(.iplots.fw, "I", "replaceVar", var$vid, cont)
+    r <- .jcall(.iplots.fw, "I", "replaceVar", var$vid, .jarray(cont))
   else {
-      vf <- factor(as.character(cont))
-      .jcall(.iplots.fw, "I", "replaceVar",
-             var$vid, as.integer(unclass(vf)-1), levels(vf))
-    }
+    vf <- factor(as.character(cont))
+    r <- .jcall(.iplots.fw, "I", "replaceVar",
+                var$vid, as.integer(unclass(vf)-1:1), levels(vf))
+  }
+  if (r<0) stop("Unable to replace iSet variable contents (either type or length doesn't match)")
   if (!batch)
     iset.updateVars()
 }
+
+"[.ivar" <- function(x,...) ivar.data(x)[...]
+"[<-.ivar"<- function(x,...,value) { a <- ivar.data(x); a[...] <- value; ivar.update(x, a) }
+
 
 #`<-.ivar` <- ivar.update
 
@@ -398,7 +447,7 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
   a
 }
 
-.iplot.iMosaic <- function (vars, ...) {
+.iplot.iMosaic <- function (vars, ...,) {
   vv<-vector()
   for (v in vars) {
     if (inherits(v, "ivar"))
@@ -413,24 +462,75 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
   a
 }
 
-#==========================================================================
-# user-level plot calls
-#==========================================================================
+# processes arguments and returns two components:
+# - vars : IDs of variables in the call
+# - opts : any other (named) options to the call
+#
+# variables are either
+#  * unnamed arguments to the call
+#  * list passed as "vars" argument
+# they are converted from their raw form to var IDs pushing them to iset
+# if necessary
+.var.list <- function (...) {
+  l <- list(...)
+  vars <- NULL
+  opts <- l
+  if (!length(names(l))) {
+    vars <- l
+    sl <- substitute(list(...))
+    sl[[1]] <- NULL
+    names(vars) <- unlist(lapply(sl,deparse))
+    if (length(vars)==1 && is.list(vars))
+      vars <- vars[[1]]
+    opts <- NULL
+  } else if (sum(names(l)=="")) {
+    vars <- l
+    sl <- substitute(list(...))
+    sl[[1]] <- NULL
+    sl[[names(l)!=""]] <- NULL
+    vars[[names(l)!=""]] <- NULL
+    opts[[names(opts)==""]] <- NULL
+    if (length(vars)==1 && is.list(vars[[1]]))
+      vars <- vars[[1]]
+    else
+      names(vars) <- unlist(lapply(sl,deparse))
+  } else {
+    m <- pmatch(names(l),"vars")
+    if (!is.na(m)) {
+      vars <- l[[which(m==1)]]
+      opts[[which(m==1)]] <- NULL
+    }
+  }
+  
+  if (is.null(vars)) stop("Missing data")
 
-imosaic <- function (vars, ...){
   len<-length(vars)
   vv <- vector()
   if (inherits(vars,"ivar"))
     vv <- vars$vid
   else {
     if (is.list(vars) && length(vars)>1) {
-      for (v in 1:length(vars)) vv <- c(vv, ivar.new(.ivar.valid.name(names(vars)[v]), vars[,v])$vid)
+      if (length(vars)!=length(names(vars)))
+        names(vars) <- rep("V",length(vars))
+      for (v in 1:length(vars))
+        vv[v] <-ivar.new(names(vars)[v], vars[[v]])$vid
     } else {
-      vv <- ivar.new(.ivar.valid.name(deparse(substitute(vars)), vars[,v])$vid)
+      vv <- ivar.new(deparse(substitute(vars)), vars)$vid
     }
   }
-  if (length(vv)<1) stop("at least one valid variable is required")
-  .iplot.iMosaic(vv,...)
+  if (!length(vv)) stop("Missing data")
+  #do.call(".iplot.iMosaic",c(list(vars=vv), opts))
+  list(vars=vv, opts=opts)
+}
+
+#==========================================================================
+# user-level plot calls
+#==========================================================================
+
+
+imosaic <- function(...) {
+  l <- .var.list(...)
+  do.call(".iplot.iMosaic",c(list(vars=l$vars), l$opts))
 }
 
 iplot <- function(x, y=NULL, xlab=NULL, ylab=NULL, ...) {
@@ -463,9 +563,9 @@ iplot <- function(x, y=NULL, xlab=NULL, ylab=NULL, ...) {
     stop(paste("Incompatible vector lengths (",lx," and ",ly,").\nBoth vectors x and y must be of the same length.",sep=''))
 
   if (!inherits(x,"ivar"))
-    x<-ivar.new(.ivar.valid.name(nx), x)
+    x<-ivar.new(nx, x)
   if (!inherits(y,"ivar"))
-    y<-ivar.new(.ivar.valid.name(ny), y)
+    y<-ivar.new(ny, y)
   if (is.null(x)) stop("Invalid X variable")
   if (is.null(y)) stop("Invalid Y variable")
   .iplot.iPlot(x,y,...)
@@ -476,20 +576,31 @@ ibar <- function(var, ...) {
   if (inherits(var,"ivar")) len<-.jcall(var$obj,"I","size")
   if (len<2)
     stop("ibar requires at least two data points")
-   if ((is.vector(var) || is.factor(var)) && length(var)>1)
-     var<-ivar.new(.ivar.valid.name(deparse(substitute(var))[1]), as.factor(var));
+  if (!inherits(var, "ivar") && (is.vector(var) || is.factor(var)) && length(var)>1)
+     var<-ivar.new(deparse(substitute(var))[1], as.factor(var))
   .iplot.iBar(var, ...)
 }
 
 ihist <- function(var, ...) {
-  len<-length(var)
-  if (inherits(var,"ivar")) len<-.jcall(var$obj,"I","size")
+  varn <- deparse(substitute(var))[1]
+  len <- length(var)
+  isNum <- is.numeric(var)
+  if (inherits(var,"ivar")) {
+    len<-.jcall(var$obj,"I","size")
+    isNum <- .jcall(var$obj, "Z", "isNum")
+  }
   if (len<2)
     stop("ihist requires at least two data points")
-#  if (!is.numeric(var))
-#    stop("Variable must be numeric.")
+  if (!isNum) {
+    if (inherits(var, "ivar"))
+      stop("Variable must be numeric.")
+    else {
+      var <- as.numeric(var)
+      varn <- paste("as.numeric(",varn,")",sep='')
+    }
+  }
   if (!inherits(var, "ivar"))
-    var<-ivar.new(.ivar.valid.name(deparse(substitute(var))[1]), var);
+    var<-ivar.new(varn, var);
   .iplot.iHist(var, ...)
 }
 
@@ -503,9 +614,9 @@ ibox <- function(x, y=NULL, ...) {
           var <- as.integer(var)
         varname <- names(x)[[i]]
         if (!is.null(varname))
-  	  var <- ivar.new(.ivar.valid.name(varname), var)
+  	  var <- ivar.new(varname, var)
   	else
- 	  var <- ivar.new(.ivar.valid.name("boxplot"), var)
+ 	  var <- ivar.new("V", var)
         if (inherits(var,"ivar"))  vv <- c(vv,var$vid)
       }
       i <- i+1
@@ -517,42 +628,23 @@ ibox <- function(x, y=NULL, ...) {
     if (inherits(x,"ivar")) len<-.jcall(x$obj,"I","size")
     if (len<2)
       stop("ibox requires at least two data points")
-    x<-ivar.new(.ivar.valid.name(deparse(substitute(x))[1]), x);
+    x<-ivar.new(deparse(substitute(x))[1], x);
     if (!is.null(y))
-      y <- ivar.new(.ivar.valid.name(deparse(substitute(y))[1]), as.factor(y));
+      y <- ivar.new(deparse(substitute(y))[1], as.factor(y));
     .iplot.iBox(x, y, ...)
   }
 }
 
-ihammock <- function(vars, ...) {
-  vv<-vector()
-  for (var in vars) {
-    var<-as.factor(var)
-    if (length(var) > 1) {
-      var <- ivar.new(.ivar.valid.name("hammock."), var)
-      if (inherits(var,"ivar"))  vv <- c(vv,var$vid)
-    }
-  }
-  if (length(vv)<2) stop("at least two valid variables are required")
-  .iplot.iHammock(vv, ...)
+ihammock <- function(...) {
+  l <- .var.list(...)
+  if (length(l$vars)<2) stop("At least two variables are required for PCP")
+  do.call(".iplot.iHammock",c(list(vars=l$vars), l$opts))
 }
 
-ipcp <- function(vars, ...) {
-  vv<-vector()
-  i <- 1
-  for (var in vars) {
-    if (length(var) > 1) {
-      varname <- names(vars)[[i]]
-      if (!is.null(varname))
-	      var <- ivar.new(.ivar.valid.name(varname), var)
-	  else
-	      var <- ivar.new(.ivar.valid.name("pcp"), var)
-      if (inherits(var,"ivar"))  vv <- c(vv,var$vid)
-    }
-    i <- i+1
-  }
-  if (length(vv)<2) stop("at least two valid variables are required")
-  .iplot.iPCP(vv, ...)
+ipcp <- function(...) {
+  l <- .var.list(...)
+  if (length(l$vars)<2) stop("At least two variables are required for PCP")
+  do.call(".iplot.iPCP",c(list(vars=l$vars), l$opts))
 }
 
 iplot.opt <- function(..., plot=iplot.cur()) {
@@ -567,7 +659,7 @@ iplot.opt <- function(..., plot=iplot.cur()) {
   repaint = FALSE
 
   optlist <- list(...)
-  if(length(optlist)>0) {
+  if(length(optlist)) {
     for(i in 1:length(optlist)) .jcall(plot$obj,"V","setOption",names(optlist)[i],optlist[[i]])
     repaint = TRUE
   }
@@ -605,7 +697,7 @@ iplot.opt <- function(..., plot=iplot.cur()) {
 
 iplot.data <- function(id=NULL) {
   if (!is.null(id)) {
-    v<-.jcall(.iplot.current$obj,"Lorg/rosuda/ibase/SVar;","getData",as.integer(id-1))
+    v<-.jcall(.iplot.current$obj,"Lorg/rosuda/ibase/SVar;","getData",as.integer(id-1:1))
     if (!is.null(v)) {
       if(.jcall(.iplots.fw,"I","varIsNum",v)!=0)
         .jcall(.iplots.fw,"[D","getDoubleContent",v,evalArray=TRUE)
@@ -650,7 +742,7 @@ iplot.backend <- function(type = NULL) {
   if (!is.null(type)) {
     ge <- pmatch(type[1],getypes)
     if (any(is.na(ge))) stop("invalid backend type")
-    .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(ge-1))
+    .jcall(.iplots.fw,"V","setGraphicsEngine",as.integer(ge-1:1))
   }
   getypes[.jcall(.iplots.fw,"I","getGraphicsEngine")+1]
 }
@@ -673,9 +765,9 @@ iset.select <- function(what, mode="replace", mark=TRUE) {
   if (mode=="intersect")
     error("I'm sorry, mode='intersect' is not yet supported in this version.")
   if (is.logical(what)) {
-    for(i in 1:length(what)) { if (what[i]) .jcall(m,"V","set",as.integer(i-1),mark) }
+    for(i in 1:length(what)) { if (what[i]) .jcall(m,"V","set",as.integer(i-1:1),mark) }
   } else {
-    for(i in what) { .jcall(m,"V","set",as.integer(i-1),mark) }
+    for(i in what) { .jcall(m,"V","set",as.integer(i-1:1),mark) }
   }
   .jcall(.iplots.fw,"V","updateMarker")
   invisible()
@@ -742,7 +834,7 @@ iobj.list <- function(plot = iplot.cur()) {
   l<-list()
   if (i>0) {
     for(j in 1:i) {
-      a<-list(obj=.jcall(pm,"Lorg/rosuda/ibase/toolkit/PlotObject;","get",as.integer(j-1)),pm=pm,plot=plot)
+      a<-list(obj=.jcall(pm,"Lorg/rosuda/ibase/toolkit/PlotObject;","get",as.integer(j-1:1)),pm=pm,plot=plot)
       class(a)<-"iobj"
       l[[j]]<-a
     }
@@ -755,7 +847,7 @@ iobj.get <- function(pos, plot = iplot.cur()) {
   if (!inherits(plot,"iplot"))
     stop("The specified plot is no iplot")
   pm<-.jcall(plot$obj,"Lorg/rosuda/ibase/toolkit/PlotManager;","getPlotManager")
-  a<-list(obj=.jcall(pm,"Lorg/rosuda/ibase/toolkit/PlotObject;","get",as.integer(pos-1)),pm=pm,plot=plot)
+  a<-list(obj=.jcall(pm,"Lorg/rosuda/ibase/toolkit/PlotObject;","get",as.integer(pos-1:1)),pm=pm,plot=plot)
   class(a)<-"iobj"
   a
 }
@@ -788,7 +880,7 @@ iobj.next <- function(which=iobj.cur(), plot = iplot.cur()) {
   if (length(l) == 1) return(1)
   if (inherits(which, "iobj")) which <- base::which(unlist(lapply(l,.iobj.equal,which)))
   which <- if (length(which) != 1) 1 else which + 1
-  which <- ((which-1) %% length(l)) + 1
+  which <- ((which-1:1) %% length(l)) + 1
   which
 }
 
@@ -799,7 +891,7 @@ iobj.prev <- function(which=iobj.cur(), plot = iplot.cur()) {
   if (length(l) == 1) return(1)
   if (inherits(which, "iobj")) which <- base::which(unlist(lapply(l,.iobj.equal,which)))
   which <- if (length(which) != 1) 1 else which - 1
-  which <- ((which-1) %% length(l)) + 1
+  which <- ((which-1:1) %% length(l)) + 1
   which
 }
 
