@@ -9,13 +9,17 @@
   it may be of limited use. It was created as a proof of the iBase
   concept which makes it very easy to implement new interactive plots.
 }
+\synopsis{
+  ihammock(...)
+}
 \usage{
   ihammock(vars, ...)
 }
 \arguments{
   \item{vars}{list of factors to display}
   \item{...}{All additional parameters are passed to
-    \code{\link{iplot.opt}}.
+    \code{\link{iplot.opt}}. All unnamed parameters are assumed to be
+    data to plot.
   }
 }
 \value{
@@ -29,6 +33,6 @@
 library(MASS)
 data(Cars93)
 attach(Cars93)
-ihammock(list(AirBags, Cylinders, Origin))
+ihammock(AirBags, Cylinders, Origin)
 }
 \keyword{hplot}

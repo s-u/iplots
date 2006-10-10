@@ -5,6 +5,11 @@
 \alias{ivar.update}
 \alias{iset.df}
 \alias{iset.updateVars}
+\alias{$.iset}
+\alias{[.ivar}
+\alias{[<-.ivar}
+\alias{[[.iset}
+\alias{print.ivar}
 \title{
   Data (ivar) manipulation functions
 }
@@ -22,6 +27,10 @@
   \code{iset.df} pushes an entire data frame into corresponding
   \code{iVar} variables
 
+  \code{[.ivar} allows data subsetting of ivar contents
+
+  \code{[<-.ivar} allows partial replacement of ivar contents
+  
   \code{iset.updateVars} notifies all plots that variables have been
   changed. This function should not be normally used, because
   notification happens automatically, unless batch updates are
@@ -31,19 +40,28 @@
 ivar.data(var)
 ivar.new(name = deparse(substitute(cont)), cont)
 ivar.update(var, cont, batch = FALSE)
+`[.ivar`(x, ...)
+`[<-.ivar`(x, ..., value)
+print.ivar(x, ...)
+
+`[[.iset`(x, i)
+`$.iset`(x, name)
 iset.df(df)
 iset.updateVars()
 }
 \arguments{
   \item{var}{an existing \code{iVar} variable}
   \item{cont}{desired contents - usually a numeric vector or a factor}
-  \item{name}{name of the newly created variable as it will appear in
-    the \code{iSet} and all plots}
+  \item{name}{variable name in an iSet}
   \item{batch}{if set to \code{TRUE} then plots are not automatically
   notified about the change. This allows an update of multiple variables
   in batches without constant re-painting of the plots.}
   \item{df}{a data frame whose columns will be converted into
     \code{iVar}s}
+  \item{x}{object to subset}
+  \item{...}{indices}
+  \item{i}{index}
+  \item{value}{replacement value}
 }
 \details{
   All data that will are displayed in an iPlot are organized in

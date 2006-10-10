@@ -5,6 +5,8 @@
 \alias{iset.next}
 \alias{iset.prev}
 \alias{iset.cur}
+\alias{iset}
+\alias{print.iset}
 \title{
 iSet management functions.
 }
@@ -36,6 +38,10 @@ iSet management functions.
   specified by the argument.
   
   \code{\link{iset.set}} makes the iSet with the specified ID current.
+
+  \code{iset} returns the object corresponding to a given iSet.
+
+  \code{print.iset} prints an iSet object.
 }
 \usage{
 iset.new(name=NULL)
@@ -44,6 +50,8 @@ iset.cur()
 iset.next(which=iset.cur())
 iset.prev(which=iset.cur())
 iset.set(which=iset.next())
+iset(which=iset.cur())
+print.iset(x, ...)
 }
 \arguments{
   \item{name}{Name of the new iSet. If no name is specified, an
@@ -51,6 +59,8 @@ iset.set(which=iset.next())
     integer. The name can be used instead on an ID in many cases.}
   \item{which}{An integer specifying an iSet ID or a string specifying a
     name of the iSet.}
+  \item{x}{An iSet object to print}
+  \item{...}{further parameters to be passed to \code{print}}
 }
 \seealso{
   \code{\link{iplot.list}}, \code{\link{iobj.list}}

@@ -6,14 +6,17 @@
 \description{
   This function creates a new interactive parallel coordinates plot from the given data.
 }
+\synopsis{
+ipcp(...)
+}
 \usage{
 ipcp(vars, ...)
 }
 \arguments{
   \item{vars}{list of at least two variables}
   \item{...}{All additional parameters are passed to
-    \code{\link{iplot.opt}}. Many of the parameters used in
-    \code{\link{plot}} are supported.
+    \code{\link{iplot.opt}}. All unnamed parameters are treated as
+    variables to plot.
   }
 }
 \value{
