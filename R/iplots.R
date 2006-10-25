@@ -1,6 +1,6 @@
 #==========================================================================
 # iplots - interactive plots for R
-# Package version: 1.0-5
+# Package version: 1.0-6
 #
 # $Id$
 # (C)Copyright 2003-6 Simon Urbanek, 2006 Tobias Wichtrey
