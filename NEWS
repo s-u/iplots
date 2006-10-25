@@ -1,0 +1,34 @@
+ NEWS/ChangeLog for iPlots package
+===================================
+
+1.0-6	(under development)
+     o	add support for imap
+
+1.0-5	2006-10-11
+     o	ivar.new now compares the contents with existing variables and
+	will return original reference if the variable already exists
+
+     o	imosaic and ipcp support variable-length arguments
+
+     o	imosaic accepts additional "type" parameter to specify the
+	desired mosaic plot variation
+
+     o	iset, iplot and iopt handling ahs been streamlined and better
+	documented. It is now possible to obtain individual objects
+	for iset, ivar, iplot and iobj.
+
+     o	each plot type has a distinct subclass of "iplot" and thus can
+	be identified as such
+
+1.0-4	2006-08-29
+     o	several variations of mosaic plots exhibited incorrect
+	behavior with respect to empty cells, this has been now fixed
+
+1.0-3	2006-08-20
+     o	first CRAN release
+...
+
+0.1-0	2003/03/23
+     o	first release
+
+
