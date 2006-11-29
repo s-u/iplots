@@ -13,12 +13,18 @@ mkdir /tmp/iplots.java
 
 JARFILE=$1
 
-if [ -z $JARFILE ]; then
-    JARFILE="../../../org/iplots.jar";
-    rm -f $JARFILE
-    make -C ../../../org iplots.jar
+if [ -z "$JARFILE" ]; then
+    if [ -z "${ORGPATH}" ]; then
+	DEFAULTSRC="${SWD}/../../../org";
+    else
+	DEFAULTSRC="${ORGPATH}"
+    fi
+    JARFILE="${DEFAULTSRC}/iplots.jar";
+    rm -f "$JARFILE"
+    make -C "${DEFAULTSRC}" iplots.jar
+    cd "${SWD}"
 fi
-if [ ! -e $JARFILE ]; then
+if [ ! -e "$JARFILE" ]; then
     echo "*** ERROR: cannot find iplots.jar in $JARFILE" >&2
     echo "Please check out org/rosuda or set JARFILE correspondingly" >&2
     exit 2
@@ -33,8 +39,8 @@ fi
 
 #cp ../../../java/stat/klimt/src/*.java /tmp/iplots.java
 
-cp ../../../org/rosuda/iplots/iPlots.jpg /tmp/iplots.java/iPlots.jpg
-cp ../../../org/rosuda/ibase/Common.java /tmp/iplots.java/Common.java
+cp "${DEFAULTSRC}/rosuda/iplots/iPlots.jpg" /tmp/iplots.java/iPlots.jpg
+cp "${DEFAULTSRC}/rosuda/ibase/Common.java" /tmp/iplots.java/Common.java
 
 # we need an absolute path because we're running in /tmp
 JBASE=`dirname $JARFILE`
@@ -79,8 +85,8 @@ mkdir -p /tmp/iplots/inst/cont
 cp iplots.jar /tmp/iplots/inst/cont
 
 cd /tmp/iplots
-echo "Removing CVS stuff ..."
-rm -rf `find . -name CVS -or -name \*~ -or -name .#\*`
+echo "Removing CVS/SVN and backup stuff ..."
+rm -rf `find . -name CVS -or -name .svn -or -name \*~ -or -name .#\*`
 #echo "Updating INDEX ..."
 cd ..
 #R CMD Rdindex iplots > iplots/INDEX
