@@ -62,19 +62,20 @@ cd /tmp/iplots.java
 #echo Removing plugins and wrappers ...
 #rm -f PluginDeriveVar.java PluginGetTreeR.java PluginStartRserve.java PoGraSSSVG.java tfw.java Wrapper.java StaticReader.java PGSviewer.java
 
-if [ `uname` != "Darwin" ]; then
-    echo "Non-Mac platform. MacOS (MRJ) support will NOT be compiled."
-    rm -f org/rosuda/klimt/PlatformMac.java
-    rm -f org/rosuda/util/PlatformMac.java
-fi
-
 # adjust version number
 echo "Adjust version number and re-compile Common.java ..."
 cat Common.java | sed "s/Version=\"[0-9]*.[0-9]*\"/Version=\"${VER}\"/" > c
 rm Common.java
 mv c org/rosuda/ibase/Common.java
-echo "javac $JFLAGS org/rosuda/ibase/Common.java"
-javac $JFLAGS org/rosuda/ibase/Common.java
+echo "javac $JFLAGS -d . -classpath . org/rosuda/ibase/Common.java"
+javac $JFLAGS -d . -classpath . org/rosuda/ibase/Common.java
+rm -f org/rosuda/ibase/Common.java
+if [ ! -e org/rosuda/ibase/Common.class ]; then
+  echo "*** ERROR: cannot compile Common.class ***"
+  echo "*** ERROR: cannot compile Common.class ***" >&2
+  exit 1
+fi
+
 #echo Compiling sources ...
 #javac -O *.java
 echo Creating archive ...
