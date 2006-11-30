@@ -4,6 +4,8 @@
 1.0-6	(under development)
      o	add support for imap
 
+     o	fix issues with compiling Common with certain compilers
+
 1.0-5	2006-10-11
      o	ivar.new now compares the contents with existing variables and
 	will return original reference if the variable already exists
