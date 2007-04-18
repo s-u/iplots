@@ -2,6 +2,7 @@
 \alias{ivar}
 \alias{ivar.data}
 \alias{ivar.new}
+\alias{ivar.new.map}
 \alias{ivar.update}
 \alias{iset.df}
 \alias{iset.updateVars}
@@ -22,6 +23,8 @@
   \code{ivar.new} creates a new \code{iVar} variable in the current
   \code{iSet} using the supplied data
 
+  \code{ivar.new.map} same as \code{ivar.new} but for map (polygon) data
+
   \code{ivar.update} replaces the content of a variable
 
   \code{iset.df} pushes an entire data frame into corresponding
@@ -39,6 +42,7 @@
 \usage{
 ivar.data(var)
 ivar.new(name = deparse(substitute(cont)), cont)
+ivar.new.map(name, x, y)
 ivar.update(var, cont, batch = FALSE)
 `[.ivar`(x, ...)
 `[<-.ivar`(x, ..., value)
@@ -58,7 +62,8 @@ iset.updateVars()
   in batches without constant re-painting of the plots.}
   \item{df}{a data frame whose columns will be converted into
     \code{iVar}s}
-  \item{x}{object to subset}
+  \item{x}{object to subset or x-coordinate of the map data}
+  \item{y}{y-coordinate of the map data}
   \item{...}{indices}
   \item{i}{index}
   \item{value}{replacement value}
