@@ -43,9 +43,6 @@
 # initialize Java and create an instance on the Framework "glue" class
 .First.lib <- function(lib, pkg) {
   require(rJava)
-  dlp<-Sys.getenv("DYLD_LIBRARY_PATH")
-  if (nchar(dlp)) # for Mac OS X we need to remove X11 from lib-path
-    Sys.putenv("DYLD_LIBRARY_PATH"=gsub("/usr/X11R6/lib","",dlp))
   cp<-paste(lib,pkg,"cont","iplots.jar",sep=.Platform$file.sep)
 
   .jinit(cp, parameters="-Xmx512m", silent=TRUE)
