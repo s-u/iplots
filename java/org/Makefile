@@ -30,7 +30,7 @@ IBASE_SRC:=$(filter-out %JOGLGraphicsDevice.java,$(IBASE_SRC))
 
 #--------- targets ---------
 
-TARGETS=iplots.jar
+TARGETS=iplots.jar MRJstubs.jar
 
 JAVAC=javac $(JFLAGS)
 
