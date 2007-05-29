@@ -15,7 +15,7 @@ if [ ! -e "/tmp/${PNAME}/java/org/Makefile" ]; then
 fi
 
 cd /tmp/${PNAME}
-VER=`awk -v ORS= '/Package version:/ { print $4 }' R/iplots.R`
+VER=`sed -n -e 's/.*Package version: \([0-9.-]\{1,\}\).*/\1/p' R/iplots.R`
 echo "iplots version ${VER}"
 
 # adjust version number
