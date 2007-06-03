@@ -1,7 +1,10 @@
  NEWS/ChangeLog for iPlots package
 ===================================
 
-1.0-8	(under development)
+1.0-9	(under development)
+
+1.0-8   2007-06-3
+     o  changes in ibase package
 
 1.0-7	2007-04-18
      o	add support for imap
