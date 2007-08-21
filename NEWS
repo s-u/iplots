@@ -1,7 +1,16 @@
  NEWS/ChangeLog for iPlots package
 ===================================
 
-1.0-9	(under development)
+1.1-0	(under development)
+     o	use S4 classes for ivar and iset
+
+     o	add subseting and subassignment operator support to ivar and
+	to allow users to treat them very much like data frames and
+	vectors repectively
+
+     o	move to rJava 0.5 registration facilities
+
+     o	add batch mode support to selection API
 
 1.0-8   2007-06-3
      o  changes in ibase package

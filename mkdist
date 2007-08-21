@@ -31,9 +31,8 @@ if [ ! -e "${JARFILE}" ]; then
 fi
 
 echo "Copying java archive ..."
-mkdir -p inst/cont
-cp "${JARFILE}" inst/cont
-ln -s cont inst/java
+mkdir -p inst/java
+cp "${JARFILE}" inst/java
 
 rm -rf mkdist java 
 
