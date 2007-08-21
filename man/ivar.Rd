@@ -51,8 +51,6 @@ length.ivar(x)
 `[<-.ivar`(x, ..., value)
 print.ivar(x, ...)
 
-`[[.iset`(x, i)
-`$.iset`(x, name)
 iset.df(df)
 iset.updateVars()
 }
