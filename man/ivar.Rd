@@ -6,7 +6,6 @@
 \alias{ivar.update}
 \alias{iset.df}
 \alias{iset.updateVars}
-\alias{$.iset}
 \alias{[.ivar}
 \alias{[<-.ivar}
 \alias{length.ivar}
@@ -66,7 +65,6 @@ iset.updateVars()
   \item{x}{object to subset or x-coordinate of the map data}
   \item{y}{y-coordinate of the map data}
   \item{...}{indices}
-  \item{i}{index}
   \item{value}{replacement value}
 }
 \details{
