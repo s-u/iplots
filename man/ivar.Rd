@@ -9,7 +9,7 @@
 \alias{$.iset}
 \alias{[.ivar}
 \alias{[<-.ivar}
-\alias{[[.iset}
+\alias{length.ivar}
 \alias{print.ivar}
 \title{
   Data (ivar) manipulation functions
@@ -28,11 +28,13 @@
   \code{ivar.update} replaces the content of a variable
 
   \code{iset.df} pushes an entire data frame into corresponding
-  \code{iVar} variables
+  \code{iVar} variables (deprecated - use \code{\link{iset.new}} instead)
 
   \code{[.ivar} allows data subsetting of ivar contents
 
   \code{[<-.ivar} allows partial replacement of ivar contents
+
+  \code{length.ivar} returns the length of a variable
   
   \code{iset.updateVars} notifies all plots that variables have been
   changed. This function should not be normally used, because
@@ -44,6 +46,7 @@ ivar.data(var)
 ivar.new(name = deparse(substitute(cont)), cont)
 ivar.new.map(name, x, y)
 ivar.update(var, cont, batch = FALSE)
+length.ivar(x)
 `[.ivar`(x, ...)
 `[<-.ivar`(x, ..., value)
 print.ivar(x, ...)

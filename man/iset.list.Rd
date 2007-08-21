@@ -5,7 +5,6 @@
 \alias{iset.next}
 \alias{iset.prev}
 \alias{iset.cur}
-\alias{iset}
 \alias{print.iset}
 \title{
 iSet management functions.
@@ -17,6 +16,12 @@ iSet management functions.
   to be highlighted in all other iPlots based on the same iSet. The
   linking is done on case-level, therefore the variables should have the
   same number of cases.
+
+  You can get the iset object by calling the \code{iset} function. An
+  iset object can be used in a way similar to data frames, so subsetting
+  and other operations work as expected. Subassignment is always done
+  "live", so changeing parts of the data will cause plots to be updated
+  accordingly.
   
   There is always exactly one current iSet. An initial iSet called
   "default" is created when the iplots library is loaded. All new
@@ -39,30 +44,29 @@ iSet management functions.
   
   \code{\link{iset.set}} makes the iSet with the specified ID current.
 
-  \code{iset} returns the object corresponding to a given iSet.
-
   \code{print.iset} prints an iSet object.
 }
 \usage{
-iset.new(name=NULL)
+iset.new(name=NULL, payload=NULL)
 iset.list()
 iset.cur()
 iset.next(which=iset.cur())
 iset.prev(which=iset.cur())
 iset.set(which=iset.next())
-iset(which=iset.cur())
 print.iset(x, ...)
 }
 \arguments{
   \item{name}{Name of the new iSet. If no name is specified, an
     automatic name of the form "data.X" is created where "X" is an
     integer. The name can be used instead on an ID in many cases.}
+  \item{payload}{Initial contents of the iSet in the form of a
+    list/data.frame or \code{NULL} if an empty iSet is desired.}
   \item{which}{An integer specifying an iSet ID or a string specifying a
     name of the iSet.}
   \item{x}{An iSet object to print}
   \item{...}{further parameters to be passed to \code{print}}
 }
 \seealso{
-  \code{\link{iplot.list}}, \code{\link{iobj.list}}
+  \code{\link{iset}}, \code{\link{iplot.list}}, \code{\link{iobj.list}}
 }
 \keyword{iplot}

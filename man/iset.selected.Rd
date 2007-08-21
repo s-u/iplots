@@ -26,10 +26,10 @@
 }
 \usage{
 iset.selected()
-iset.select(what, mode="replace", mark=TRUE)
+iset.select(what, mode="replace", mark=TRUE, batch=FALSE)
 iset.sel.changed(iset=iset.cur())
-iset.selectAll()
-iset.selectNone()
+iset.selectAll(batch=FALSE)
+iset.selectNone(batch=FALSE)
 }
 \arguments{
   \item{what}{specification of the new selection. This can be either a
@@ -38,6 +38,10 @@ iset.selectNone()
     teh surrent one. Supported modes are "replace", "union" and "intersect".}
   \item{mark}{mark to be used.}
   \item{iset}{iSet to query}
+  \item{batch}{when set to \code{TRUE} dependents (e.g. plots) are not
+    notified. This is useful for performing many complex updates at once
+    without the need to re-draw all plots. Use with care as the system
+    usually relies on event propagation.}
 }
 \value{
   List of IDs of selected cases (\code{iset.selected}), boolean value

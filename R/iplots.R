@@ -153,6 +153,7 @@ iset.list <- function() {
 }
 
 iset.new <- function(name=NULL, payload=NULL) {
+  if (!is.null(payload) && !is.list(payload)) stop("payload must be a list")
   .iset.save()
   if (is.null(name)) name<-.jnull("java/lang/String")
   ci<-.jcall(.iplots.fw,"I","newSet",name)+1
@@ -160,7 +161,12 @@ iset.new <- function(name=NULL, payload=NULL) {
   .iplot.current<<-NULL
   .iplot.curid<<-0
   iset.set(ci)
-  ci
+  if (!is.null(payload)) {
+      n <- names(payload)
+      if (is.null(n)) n <- paste("V",1:length(payload),sep='')
+      for (i in 1:length(payload)) ivar.new(n[i], payload[[i]])
+  }
+  iset(ci)
 }
 
 iset <- function(which=iset.cur()) {
