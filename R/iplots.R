@@ -1,10 +1,17 @@
 #==========================================================================
 # iplots - interactive plots for R
-# Package version: 1.1-0
+# Package version: 1.1-1
 #
 # $Id$
 # (C)Copyright 2003-7 Simon Urbanek, 2006 Tobias Wichtrey
 # Authors: Simon Urbanek, Tobias Wichtrey, Alex Gouberman
+#
+# This copy of iplots is licensed under GPL v2.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
 #==========================================================================
 # -- global variables (in the package environment)
@@ -42,6 +49,8 @@
 setClass("iset", representation(obj="jobjRef", name="character"))
 setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", iset="iset"))
 
+.restricted.el <- FALSE # restricted event loop use (on OS X in the GUI and shell)
+
 # library initialization: Add "<iplots>/java/iplots.jar" to classpath,
 # initialize Java and create an instance on the Framework "glue" class
 .First.lib <- function(lib, pkg) {
@@ -60,9 +69,30 @@ setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", 
 
   # disable compatibility mode on Macs (experimental!)
   if (length(grep("^darwin",R.version$os))) {
-    .jcall("java/lang/System","S","setProperty","com.apple.eawt.CocoaComponent.CompatibilityMode","false")
-    if (!nchar(Sys.getenv("R_GUI_APP_VERSION")))
-      require(CarbonEL)
+      # this is a JGR 1.5 hack - it allows us to find out whether we are running
+      # inside JGR without touching any classes
+      if (!any(.jcall("java/lang/System","S","getProperty","main.class")=="org.rosuda.JGR.JGR")) {
+          #.jcall("java/lang/System","S","setProperty","com.apple.eawt.CocoaComponent.CompatibilityMode","false")
+          .restricted.el <<- TRUE
+          if (!nchar(Sys.getenv("R_GUI_APP_VERSION"))) {
+              library(CarbonEL)
+              # improve response time
+              .cel.set.sleep(0.01)
+          } else {
+              ## disable all handlers as they conflict with the GUI
+              .jcall("java/lang/System","S","setProperty","register.about","false")
+              .jcall("java/lang/System","S","setProperty","register.open","false")
+              .jcall("java/lang/System","S","setProperty","register.preferences","false")
+              .jcall("java/lang/System","S","setProperty","register.quit","false")
+          }
+          cat("Note: On Mac OS X we strongly recommend using iplots from within JGR.\nProceed at your own risk as iplots cannot resolve potential ev.loop deadlocks.\n'Yes' is assumed for all dialogs as they cannot be shown without a deadlock,\nalso ievent.wait() is disabled.\n")
+      } else {
+          # don't mess JGR up
+          .jcall("java/lang/System","S","setProperty","register.about","false")
+          .jcall("java/lang/System","S","setProperty","register.open","false")
+          .jcall("java/lang/System","S","setProperty","register.preferences","false")
+          .jcall("java/lang/System","S","setProperty","register.quit","false")
+      }
   }
   
   assign(".iplots.fw", if (nchar(Sys.getenv("NOAWT"))) NULL else .jnew("org/rosuda/iplots/Framework"), ipe)
@@ -75,7 +105,7 @@ setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", 
   ipe$.iplot.curid<-1
   ipe$.iplot.current<-NULL
 
-  if (.inside.make.check() || nchar(Sys.getenv("NOAWT"))) .jcall(.iplots.fw,, "setNoInteractionFlag", TRUE)
+  if (.inside.make.check() || .restricted.el || nchar(Sys.getenv("NOAWT"))) .jcall(.iplots.fw,, "setNoInteractionFlag", TRUE)
 }
 
 # helper function to identify a class in a strstr manner (not nice)
@@ -1239,6 +1269,10 @@ ievent.wait <- function() {
   if (.inside.make.check()) {
     cat("NOTE: ievent.wait is likely being run from within `make check', returning NULL to prevent `make check' from stalling.\n")
     return(NULL)
+  }
+  if (.restricted.el) {
+      warning("ievent.wait cannot be used on Mac OS X without JGR, because waiting will deadlock the R, Java and system event loops. Returning NULL.")
+      return(NULL)
   }
   msg<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/NotifyMsg;","eventWait")
   if (!is.null(msg)) {
