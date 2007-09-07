@@ -1,7 +1,7 @@
  NEWS/ChangeLog for iPlots package
 ===================================
 
-1.1-1	(under devvelopment)
+1.1-1	2007-09-07
      o	allow the use of iplots within the R GUI on Mac OS X, but show a
 	warning on possible event loop deadlocks.
 
