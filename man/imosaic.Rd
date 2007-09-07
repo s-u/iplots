@@ -43,5 +43,6 @@ data(Cars93)
 attach(Cars93)
 imosaic(AirBags,Cylinders,Origin)
 imosaic(AirBags,Cylinders,Origin,type="mul")
+iplot.location(300,100,TRUE)
 }
 \keyword{hplot}

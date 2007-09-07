@@ -179,7 +179,7 @@ iset.list <- function() {
 }
 
 .iset.save <-function (ci=iset.cur()) {
-  .isets[[ci]]<<-list(iplots=.iplots,iplot.cid<-.iplot.curid,iplot.cur<-.iplot.current)
+  .isets[[ci]]<<-list(iplots=.iplots,iplot.cid=.iplot.curid,iplot.cur=.iplot.current)
 }
 
 iset.new <- function(name=NULL, payload=NULL) {
@@ -197,6 +197,60 @@ iset.new <- function(name=NULL, payload=NULL) {
       for (i in 1:length(payload)) ivar.new(n[i], payload[[i]])
   }
   iset(ci)
+}
+
+iset.rm <- function(which = iset.cur()) {
+    if (inherits(which, "iset")) {
+        which <- .jcall(.iplots.fw, "I", "indexOfSet", which@obj)
+        if (which < 0)
+            stop("invalid set (possibly already deleted")
+        which <- which + 1
+    }
+    if (is.character(which)) {
+        which <- .jcall(.iplots.fw, "I", "getSetIdByName", as.character(which)[1])
+        if (which < 0) stop("iSet of that name doesn't exist")
+        which <- which + 1
+    }
+    ocs <- iset.cur()
+    if (ocs == which) {
+        iset.set()
+        if (iset.cur() == ocs)
+            stop("cannot delete the last iSet, there must be at least one iSet at all times")
+    } else .iset.save(ocs)
+    if (!.jcall(.iplots.fw, "Z", "removeSetById", as.integer(which-1)))
+        stop("cannot remove iSet, invalid id")
+
+    l <- .isets[[which]]
+    lapply(l$iplots, .iplot.dispose)
+    .isets[[which]]<<-NULL
+    ci <- iset.cur()
+    .iplots<<-.isets[[ci]]$iplots
+    .iplot.curid<<-.isets[[ci]]$iplot.cid
+    .iplot.current<<-.isets[[ci]]$iplot.cur
+    ci
+}
+
+iplot.location <- function(x, y, relative=FALSE, plot=iplot.cur()) {
+    if (is.numeric(plot)) plot<-.iplots[[plot]]
+    if (inherits(plot, "iplot")) {
+        f<-.jcall(plot$obj,"Ljava/awt/Frame;","getFrame")
+        if (!is.jnull(f)) {
+            if (missing(x) && missing(y)) {
+                p <- .jcall(f,"Ljava/awt/Rectangle;","getBounds")
+                return (c(x=.jcall(p,"D","getX"), y=.jcall(p,"D","getY"), width=.jcall(p,"D","getWidth"), height=.jcall(p,"D","getHeight")))
+            }
+            if (missing(x))
+                { x <- if (is.logical(relative) && isTRUE(!relative)) iplot.location(plot=plot)[1] else 0 }
+            if (missing(y))
+                { y <- if (is.logical(relative) && isTRUE(!relative)) iplot.location(plot=plot)[2] else 0 }
+            loc <- c(0,0)
+            if (inherits(relative, "iplot"))
+                loc <- iplot.location(plot=relative)
+            else if (isTRUE(relative))
+                loc <- iplot.location(plot=plot)
+            .jcall(f,"V","setLocation",as.integer(x[1]+loc[1]), as.integer(y[1]+loc[2]))
+        }
+    } else stop("invalid plot")
 }
 
 iset <- function(which=iset.cur()) {
@@ -455,15 +509,21 @@ iplot.list <- function () {
   if (exists(".iplots")) .iplots else list()
 }
 
+# close doesn't dispose of the plot back-end, use .iplot.dispose instead
 .iplot.close <- function(plot) {
-  .jcall(.jcall(plot$obj,"Ljava/awt/Frame;","getFrame"),"V","dispose")
+    .jcall(.jcall(plot$obj,"Ljava/awt/Frame;","getFrame"),"V","dispose")
+}
+
+# dispose implies close i.e. the window is closed but also other structures are released
+.iplot.dispose <- function(plot) {
+    .jcall(plot$obj,"V","dispose")
 }
 
 iplot.off <- function(plot=iplot.cur()) {
   if (length(.iplots)==0) {
     if (inherits(plot, "iplot")) {
       warning("Plot is not on the plot list (which is empty), attempting to close anyway.")
-      .iplot.close(plot)
+      .iplot.dispose(plot)
     }
     return()
   }
@@ -477,7 +537,7 @@ iplot.off <- function(plot=iplot.cur()) {
       }
     if (!is.integer(plot)) {
       warning("Plot is not on the plot list, attempting to close anyway.")
-      .iplot.close(plot)
+      .iplot.dispose(plot)
       return()
     }
   }
@@ -489,7 +549,7 @@ iplot.off <- function(plot=iplot.cur()) {
       j[[k]]<-.iplots[[i]]
       k<-k+1
     } else
-      .iplot.close(.iplots[[i]])
+      .iplot.dispose(.iplots[[i]])
   .iplots <<- j
   if (length(j)==0) {
     .iplot.current<<-NULL

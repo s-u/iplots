@@ -112,6 +112,11 @@ s[1:5,c("Sepal.Width","Sepal.Length")]
 s$Test <- factor(c("yes","no")[runif(dim(s)[1])+1.5])
 s[1:5,]
 iplot(s$Sepal.Length, s$Petal.Length)
+ibar(s$Species)
+iplot.location(400,,TRUE)
 iset.select(s$Test[]=="yes")
+ibar(s$Test)
+iplot.location(400,250,TRUE)
+# use iset.rm() to remove everything
 }
 \keyword{hplot}

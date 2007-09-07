@@ -5,6 +5,7 @@
 \alias{iset.next}
 \alias{iset.prev}
 \alias{iset.cur}
+\alias{iset.rm}
 \alias{print.iset}
 \alias{show,iset-method}
 \title{
@@ -45,6 +46,10 @@ iSet management functions.
   
   \code{\link{iset.set}} makes the iSet with the specified ID current.
 
+  \code{\link{iset.rm}} removes the given iSet and all associated plots.
+  Note that this may cause the current set ID may change (even if some
+  other iSet is removed).
+
   \code{print.iset} prints an iSet object.
 }
 \usage{
@@ -54,6 +59,7 @@ iset.cur()
 iset.next(which=iset.cur())
 iset.prev(which=iset.cur())
 iset.set(which=iset.next())
+iset.rm(which=iset.cur())
 \method{print}{iset}(x, ...)
 }
 \arguments{

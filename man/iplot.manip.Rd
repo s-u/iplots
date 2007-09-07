@@ -7,6 +7,7 @@
 \alias{iplot.zoomOut}
 \alias{print.iobj}
 \alias{print.iplot}
+\alias{iplot.location}
 \title{
   iPlot manipulation functions
 }
@@ -28,6 +29,8 @@
   
   \code{iplot.zoomOut} zoom out (the coordinates are ignored as the zoom
   is heararchical)
+
+  \code{iplot.location} get or set the location of the iplot
 }
 \usage{
 iplot.backend(type = NULL)
@@ -35,7 +38,8 @@ iplot.resetZoom()
 iplot.rotate(i) 
 iplot.setExtendedQuery(str, plotID=.iplot.curid) 
 iplot.zoomIn(x1, y1, x2, y2) 
-iplot.zoomOut(x, y) 
+iplot.zoomOut(x, y)
+iplot.location(x, y, relative=FALSE, plot=iplot.cur())
 print.iobj(x, ...) 
 print.iplot(x, ...) 
 }
@@ -51,8 +55,10 @@ print.iplot(x, ...)
   \item{y1}{basis coordinate for the \code{y} axis}
   \item{x2}{edge coordinate for the \code{x} axis}
   \item{y2}{edge coordinate for the \code{y} axis}
-  \item{x}{object to print}
-  \item{y}{unused}
+  \item{x}{object to print or x-coordinate}
+  \item{y}{y-coordinate}
+  \item{plot}{plot to query or move (id or object)}
+  \item{relative}{can be \code{TRUE}, \code{FALSE} or another plot}
   \item{...}{additional parameters}
 }
 \keyword{hplot}
