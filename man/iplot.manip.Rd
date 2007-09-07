@@ -1,13 +1,8 @@
 \name{iplot.manip}
 \alias{iplot.backend}
-\alias{iplot.new}
-\alias{iplot.resetAxes}
-\alias{iplot.resetXaxis}
-\alias{iplot.resetYaxis}
 \alias{iplot.resetZoom}
 \alias{iplot.rotate}
 \alias{iplot.setExtendedQuery}
-\alias{iplot.showVars}
 \alias{iplot.zoomIn}
 \alias{iplot.zoomOut}
 \alias{print.iobj}
@@ -17,24 +12,17 @@
 }
 \description{
   The following functions are used to mainpulate iplots. They are NOT
-  part of the official API and may disappear without warning.
+  part of the official API and may disappear without warning. Most of
+  them are legacy functions introduced before \code{iplot.opt} was
+  available.
 
   \code{iplot.backend} retrieves or sets the iPlots back-end. 
-  
-  \code{iplot.resetAxes} reset all axes to their defaults
-  
-  \code{iplot.resetXaxis} reset major X axis to its default
-  
-  \code{iplot.resetYaxis} reset major Y axis to its default
   
   \code{iplot.resetZoom} reset zoom
   
   \code{iplot.rotate} set plot rotation
   
   \code{iplot.setExtendedQuery} set text for extended query
-  
-  \code{iplot.showVars} show window with current variable (unimplemented
-  unless KLIMT plugin is loaded)
   
   \code{iplot.zoomIn} zoom into specified area
   
@@ -43,22 +31,19 @@
 }
 \usage{
 iplot.backend(type = NULL)
-iplot.resetAxes(ipl = lastPlot) 
-iplot.resetXaxis(ipl = lastPlot) 
-iplot.resetYaxis(ipl = lastPlot) 
 iplot.resetZoom() 
 iplot.rotate(i) 
-iplot.setExtendedQuery(str) 
-iplot.showVars() 
+iplot.setExtendedQuery(str, plotID=.iplot.curid) 
 iplot.zoomIn(x1, y1, x2, y2) 
 iplot.zoomOut(x, y) 
 print.iobj(x, ...) 
 print.iplot(x, ...) 
 }
 \arguments{
-  \item{ipl}{plot to operate on}
   \item{i}{rotation orientation}
-  \item{str}{string to show on extended query}
+  \item{plotID}{plot ID (number)}
+  \item{str}{string to show on extended query or
+    \code{FALSE} or \code{NULL} to disable extended query}
   \item{type}{back-end type - one of \code{"awt"}, \code{"swing"} or
     \code{"opengl"} (or any unambiguous first part hereof) to set the
     type or \code{NULL} to retrieve the current back-end type}

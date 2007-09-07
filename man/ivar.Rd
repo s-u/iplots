@@ -4,12 +4,12 @@
 \alias{ivar.new}
 \alias{ivar.new.map}
 \alias{ivar.update}
-\alias{iset.df}
 \alias{iset.updateVars}
 \alias{[.ivar}
 \alias{[<-.ivar}
 \alias{length.ivar}
 \alias{print.ivar}
+\alias{show,ivar-method}
 \title{
   Data (ivar) manipulation functions
 }
@@ -26,7 +26,6 @@
 
   \code{ivar.update} replaces the content of a variable
 
-  \code{iset.df} pushes an entire data frame into corresponding
   \code{iVar} variables (deprecated - use \code{\link{iset.new}} instead)
 
   \code{[.ivar} allows data subsetting of ivar contents
@@ -45,12 +44,11 @@ ivar.data(var)
 ivar.new(name = deparse(substitute(cont)), cont)
 ivar.new.map(name, x, y)
 ivar.update(var, cont, batch = FALSE)
-length.ivar(x)
-`[.ivar`(x, ...)
-`[<-.ivar`(x, ..., value)
-print.ivar(x, ...)
+\method{length}{ivar}(x)
+\method{[}{ivar}(x, i, ...)
+\method{[}{ivar}(x, ...) <- value
+\method{print}{ivar}(x, ...)
 
-iset.df(df)
 iset.updateVars()
 }
 \arguments{
@@ -60,12 +58,17 @@ iset.updateVars()
   \item{batch}{if set to \code{TRUE} then plots are not automatically
   notified about the change. This allows an update of multiple variables
   in batches without constant re-painting of the plots.}
-  \item{df}{a data frame whose columns will be converted into
-    \code{iVar}s}
   \item{x}{object to subset or x-coordinate of the map data}
   \item{y}{y-coordinate of the map data}
+  \item{i}{index - if missing all data are returned}
   \item{...}{indices}
   \item{value}{replacement value}
+}
+\section{Methods}{
+  \describe{
+    \item{show}{\code{signature(object = "ivar")}: is mapped to
+      \code{print.ivar}}
+  }
 }
 \details{
   All data that will are displayed in an iPlot are organized in
@@ -81,13 +84,12 @@ iset.updateVars()
   name that is unique within an \code{iSet}. This process is automatic
   if you pass arbitrary vectors to the iPlots plotting
   functions. However, it is possible (and desirable) to register
-  variables beforehand. \code{iset.df} can be used to convert an entire
-  data frame into \code{iVar}s. It is much faster to use \code{iVar}s in
-  the plots instead of the raw data.
+  variables beforehand using \code{\link{iset.new}}. It is much faster
+  to use \code{iVar}s in the plots instead of the raw data.
 
   Once an \code{iVar} is created, it is merely a reference to the data
-  in the \code{iSer}. The \code{ivar.data} function can be used to
-  retrieve that data.
+  in the \code{iSet}. The regular subsetting operators \code{[} or
+  \code{ivar.data} function can be used to retrieve the data back to R.
 
   In addition, it is possible to update the contents of an \code{iVar}
   using the \code{ivar.update} function. Once the variable is updated,
@@ -96,9 +98,20 @@ iset.updateVars()
   is performed using the \code{iset.updateVars} function.
 }
 \seealso{
-  \code{\link{iset.df}}, \code{\link{ibar}}, \code{\link{iplot.list}},
+  \code{\link{iset.new}}, \code{\link{ibar}}, \code{\link{iplot.list}},
   \code{\link{iplot.opt}}
 }
-%\examples{
-%}
+\examples{
+data(iris)
+s <- iset.new("iris", iris)
+rm(iris) # we don't need iris anymore
+s[1:5,]
+s$Species
+s$Species[]
+s[1:5,c("Sepal.Width","Sepal.Length")]
+s$Test <- factor(c("yes","no")[runif(dim(s)[1])+1.5])
+s[1:5,]
+iplot(s$Sepal.Length, s$Petal.Length)
+iset.select(s$Test[]=="yes")
+}
 \keyword{hplot}

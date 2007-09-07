@@ -5,6 +5,13 @@
      o	allow the use of iplots within the R GUI on Mac OS X, but show a
 	warning on possible event loop deadlocks.
 
+     o	update docs to flag S3 methods correctly
+
+     o	map S4 show to S3 print so iset/ivar are shown correctly
+
+     o	add `$<-.iset` method, enhance and fix other accessor methods
+	for both iset and ivar. Added examples (in ?ivar and ?iset)
+
 1.1-0	2007-08-22
      o	use S4 classes for ivar and iset
 

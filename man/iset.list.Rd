@@ -6,6 +6,7 @@
 \alias{iset.prev}
 \alias{iset.cur}
 \alias{print.iset}
+\alias{show,iset-method}
 \title{
 iSet management functions.
 }
@@ -53,7 +54,7 @@ iset.cur()
 iset.next(which=iset.cur())
 iset.prev(which=iset.cur())
 iset.set(which=iset.next())
-print.iset(x, ...)
+\method{print}{iset}(x, ...)
 }
 \arguments{
   \item{name}{Name of the new iSet. If no name is specified, an
@@ -65,6 +66,12 @@ print.iset(x, ...)
     name of the iSet.}
   \item{x}{An iSet object to print}
   \item{...}{further parameters to be passed to \code{print}}
+}
+\section{Methods}{
+  \describe{
+    \item{show}{\code{signature(object = "iset")}: is mapped to
+      \code{print.iset}}
+  }
 }
 \seealso{
   \code{\link{iset}}, \code{\link{iplot.list}}, \code{\link{iobj.list}}

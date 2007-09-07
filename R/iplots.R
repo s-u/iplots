@@ -228,8 +228,19 @@ isets <- function() {
   .new.ivar(vid=vid, name=.jcall(vobj, "S", "getName"), obj=vobj, iset=x)
 }
 
+"$<-.iset" <- function(x, name, value) {
+    vid <- .jcall(x@obj, "I", "indexOf", as.character(name))
+    if (vid < 0) { # new name
+        ivar.new(name, value)
+        return(x)
+    }
+    # existing name = replace
+    vobj <- .jcall(x@obj, "Lorg/rosuda/ibase/SVar;", "at", vid)
+    x[[name]] <- value
+}
+
 "[[.iset" <- function(x, i) {
-  vid <- if (is.numeric(i)) as.integer(i-0.75) else .jcall(x@obj, "I", "indexOf", i)
+  vid <- if (is.numeric(i)) as.integer(i-0.75) else .jcall(x@obj, "I", "indexOf", as.character(i))
   if (vid < 0) stop("subscript out of bounds")
   vobj <- .jcall(x@obj, "Lorg/rosuda/ibase/SVar;", "at", vid)
   if (is.jnull(vobj)) stop("subscript out of bounds")
@@ -237,17 +248,18 @@ isets <- function() {
 }
 
 "[.iset" <- function(x, i=1:(dim(x)[1]), j=1:length(x)) {
-  j <- (1:length(x))[j]
-  l <- lapply(j, function(p) x[[p]][i])
-  names(l) <- unlist(lapply(j, function(p) { v<-.jcall(x@obj,"Lorg/rosuda/ibase/SVar;","at",as.integer(p-1)); if (is.jnull(v)) NA else .jcall(v,"S","getName") }))
-  as.data.frame(l,row.names=1:length(l[[1]]))
+    # trick to get negative indexing right
+    if (is.numeric(j)) j <- (1:length(x))[j]
+    l <- lapply(j, function(p) x[[p]][i])
+    names(l) <- unlist(lapply(j, function(p) x[[p]]@name))
+    as.data.frame(l,row.names=1:length(l[[1]]))
 }
 
 "[<-.iset" <- function(x, i=1:(dim(x)[1]), j=1:length(x), value) {
   j <- (1:length(x))[j]
   if (length(j)==0 || length(i)==0) return(x)
   for (vi in 1:length(j)) {
-    v <- s[[j[vi]]]
+    v <- x[[j[vi]]]
     if (!is.null(v)) {
       d<-dim(value)[2]
       if (is.null(d)||is.na(d)) {
@@ -277,9 +289,9 @@ isets <- function() {
   }
   iv <- x[[i]]
   if (!is.null(iv))
-    iv[i]<-value
+      ivar.update(iv, value)
   else
-    ivar.new(i, value)
+      ivar.new(i, value)
   x
 }
 
@@ -314,6 +326,10 @@ print.iset <- function (x, ...) {
 print.ivar <- function(x, ...) {
   print(paste("iVar{",.jcall(x@obj,"S","getName")," from ",x@iset@name,"}",sep=''),...)
 }
+
+# S4 objects are sometimes printed using `show' so we have to map show to print
+setMethod("show", "ivar", function(object) print.ivar(object))
+setMethod("show", "iset", function(object) print.iset(object))
 
 #==========================================================================
 # variables handling (iVar)
@@ -415,7 +431,7 @@ ivar.update <- function (var, cont, batch = FALSE) {
     iset.updateVars()
 }
 
-"[.ivar" <- function(x,...) ivar.data(x)[...]
+"[.ivar" <- function(x,i,...) if (missing(i)) ivar.data(x) else ivar.data(x)[i]
 "[<-.ivar"<- function(x,...,value) { a <- ivar.data(x); a[...] <- value; ivar.update(x, a) }
 
 
@@ -879,14 +895,6 @@ iplot.data <- function(id=NULL) {
   }
 }
 
-# old API functions
-
-iplot.showVars <- function() { .jcall(.iplots.fw,"V","newFrame"); }
-iplot.resetXaxis <- function(ipl=lastPlot) { .jcall(.jcall(ipl,"Lorg/rosuda/ibase/toolkit/Axis;","getXAxis"),"V","setDefaultRange"); }
-iplot.resetYaxis <- function(ipl=lastPlot) { .jcall(.jcall(ipl,"Lorg/rosuda/ibase/toolkit/Axis;","getYAxis"),"V","setDefaultRange"); }
-iplot.resetAxes <- function(ipl=lastPlot) { resetXaxis(ipl); resetYaxis(ipl); }
-iset.df <- function(df) { ndf<-list(); for(i in names(df)) { ndf[[i]]<-ivar.new(i,df[[i]]) }; }
-
 # BaseCanvas methods
 
 iplot.zoomIn<-function(x1,y1,x2,y2) {.jcall(.iplot.current$obj,,"performZoomIn",as.integer(x1),as.integer(y1),as.integer(x2),as.integer(y2));invisible();}
@@ -907,13 +915,13 @@ iplot.backend <- function(type = NULL) {
   getypes[.jcall(.iplots.fw,"I","getGraphicsEngine")+1]
 }
 
-iplot.setExtendedQuery <- function(plotID,str) {
-	if(str==F)  .jcall(.iplots.fw,,"useExtQueryString",as.integer(plotID),F)
-	else .jcall(.iplots.fw,,"setExtQueryString",as.integer(plotID),.jnew("java/lang/String",str))
-	invisible();
+iplot.setExtendedQuery <- function(str, plotID=.iplot.curid) {
+    if(is.null(str) || str==FALSE)
+        .jcall(.iplots.fw,,"useExtQueryString",as.integer(plotID),FALSE)
+    else
+        .jcall(.iplots.fw,,"setExtQueryString",as.integer(plotID),as.character(str)[1])
+    invisible()
 }
-iplot.setExtendedQuery<-function(str) {iplot.setExtendedQuery(.iplot.curid,str); invisible();}
-
 
 #==========================================================================
 # selection/highlighting API
@@ -923,7 +931,7 @@ iset.select <- function(what, mode="replace", mark=TRUE, batch=FALSE) {
   m<-.jcall(.jcall(.iplots.fw,"Lorg/rosuda/ibase/SVarSet;","getCurrentSet"),"Lorg/rosuda/ibase/SMarker;","getMarker")
   if (mode=="replace") iset.selectNone(batch=batch)
   if (mode=="intersect")
-    error("I'm sorry, mode='intersect' is not yet supported in this version.")
+      stop("I'm sorry, mode='intersect' is not yet supported in this version.")
   if (is.logical(what)) {
     for(i in 1:length(what)) { if (what[i]) .jcall(m,"V","set",as.integer(i-1:1),mark) }
   } else {

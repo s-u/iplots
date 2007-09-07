@@ -14,6 +14,7 @@
 \alias{[.iset}
 \alias{[[.iset}
 \alias{$.iset}
+\alias{$<-.iset}
 \alias{names<-.iset}
 \title{
 iSet and iVar - managing data in iPlots
@@ -46,15 +47,16 @@ iSet and iVar - managing data in iPlots
 \usage{
 iset(which=iset.cur())
 isets()
-`[[.iset`(x, i)
-`$.iset`(x, name)
-`[[<-.iset`(x, i, value)
-`[.iset`(x, i = 1:(dim(x)[1]), j = 1:length(x))
-`[<-.iset`(x, i = 1:(dim(x)[1]), j = 1:length(x), value)
-`names<-.iset`(x, value)
-names.iset(x)
-length.iset(x)
-dim.iset(x)
+\method{[[}{iset}(x, i)
+\method{$}{iset}(x, name)
+\method{$}{iset}(x, name) <- value
+\method{[[}{iset}(x, i) <- value
+\method{[}{iset}(x, i = 1:(dim(x)[1]), j = 1:length(x))
+\method{[}{iset}(x, i = 1:(dim(x)[1]), j = 1:length(x)) <- value
+\method{names}{iset}(x) <- value
+\method{names}{iset}(x)
+\method{length}{iset}(x)
+\method{dim}{iset}(x)
 }
 \arguments{
   \item{x}{iset object}
@@ -63,9 +65,27 @@ dim.iset(x)
   \item{value}{replacement value}
   \item{which}{An integer specifying an iSet ID or a string specifying a
     name of the iSet.}
-  \item{name}{name of the iSet}
+  \item{name}{name of the variable}
 }
 \seealso{
   \code{\link{ivar}}, \code{\link{iset.cur}}
+}
+\examples{
+data(iris)
+s <- iset.new("iris", iris)
+rm(iris)
+s[]
+names(s)
+dim(s)
+length(s)
+s[[1]]
+s$Species
+s[1:5,c("Sepal.Length","Petal.Length")]
+rm(s)
+# even if we get rid of the reference object,
+# we can get it back
+s <- iset()
+s
+# see ?ivar for more examples
 }
 \keyword{iplot}
