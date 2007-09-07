@@ -12,6 +12,12 @@
      o	add `$<-.iset` method, enhance and fix other accessor methods
 	for both iset and ivar. Added examples (in ?ivar and ?iset)
 
+     o	add iset.rm() which allows removal of iSets and all associated
+	plots
+
+     o	add iplot.location() which is experimental for now until nesting
+	of plots is defined properly
+
 1.1-0	2007-08-22
      o	use S4 classes for ivar and iset
 
