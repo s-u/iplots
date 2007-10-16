@@ -1,6 +1,6 @@
 #==========================================================================
 # iplots - interactive plots for R
-# Package version: 1.1-1
+# Package version: 1.1-2
 #
 # $Id$
 # (C)Copyright 2003-7 Simon Urbanek, 2006 Tobias Wichtrey
@@ -250,6 +250,21 @@ iplot.location <- function(x, y, relative=FALSE, plot=iplot.cur()) {
                 loc <- iplot.location(plot=plot)
             .jcall(f,"V","setLocation",as.integer(x[1]+loc[1]), as.integer(y[1]+loc[2]))
         }
+    } else stop("invalid plot")
+}
+
+iplot.size<-function(width, height, plot=iplot.cur()) {
+    if (is.numeric(plot))
+        plot <- .iplots[[plot]]
+    query <- (missing(width) && missing(height))
+    if (inherits(plot, "iplot")) {
+        width <- if (missing(width)) .jcall(plot$obj,"I","getWidth") else as.integer(width)[1]
+        height <- if (missing(height)) .jcall(plot$obj,"I","getHeight") else as.integer(height)[1]
+        if (!query) {
+            .jcall(plot$obj,,"setSize", width, height)
+            .jcall(.jcall(plot$obj,"Ljava/awt/Frame;","getFrame"),,"pack")
+        }
+        c(width=width, height=height)
     } else stop("invalid plot")
 }
 

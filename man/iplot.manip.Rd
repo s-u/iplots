@@ -7,6 +7,7 @@
 \alias{iplot.zoomOut}
 \alias{print.iobj}
 \alias{print.iplot}
+\alias{iplot.size}
 \alias{iplot.location}
 \title{
   iPlot manipulation functions
@@ -31,6 +32,8 @@
   is heararchical)
 
   \code{iplot.location} get or set the location of the iplot
+
+  \code{iplot.size} get or set the size of an iplot plot
 }
 \usage{
 iplot.backend(type = NULL)
@@ -40,6 +43,7 @@ iplot.setExtendedQuery(str, plotID=.iplot.curid)
 iplot.zoomIn(x1, y1, x2, y2) 
 iplot.zoomOut(x, y)
 iplot.location(x, y, relative=FALSE, plot=iplot.cur())
+iplot.size(width, height, plot=iplot.cur())
 print.iobj(x, ...) 
 print.iplot(x, ...) 
 }
@@ -59,6 +63,28 @@ print.iplot(x, ...)
   \item{y}{y-coordinate}
   \item{plot}{plot to query or move (id or object)}
   \item{relative}{can be \code{TRUE}, \code{FALSE} or another plot}
+  \item{width}{width of the plot (in pixels)}
+  \item{height}{height of the plot (in pixels)}
   \item{...}{additional parameters}
+}
+\details{
+  \code{iplot.location}, \code{iplot.size}: those functions either query
+  or set the location or size of the plot. If either of the coordinates
+  is missing, the size/location in that coordinate will not be changed.
+  If both coordinates are missing, the functions have no side effect and
+  just return the current size (\code{iplot.size}) or location and size
+  (\code{iplot.location}) as named vectors (\code{x}, \code{y} for
+  location and \code{width}, \code{height} for size).
+
+  \code{iplot.backend} determines the back-end used by iplots. The
+  choices are \code{awt}, \code{swing} an d\code{opengl}. Not all
+  back-ends are available on all platforms. \code{AWT} is the most
+  compatible back-end and available on all platforms, \code{Swing} has
+  more modern look and feel and \code{OpenGL} sacrifices text rendering
+  quality for speed (i.e. OpenGL backend is best for large data). When
+  no backend is specified, the function has no side effect and just
+  returns the currently requested back-end. Currently there is no
+  indication whether the back-end request was honored or not. If a
+  backend is not supported, the request is silently ignored.
 }
 \keyword{hplot}
