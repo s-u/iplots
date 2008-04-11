@@ -3,6 +3,7 @@
 
 1.1-2	(under development)
      o	add iplot.size() to get/set the size of a plot
+     o  added Swing menu to ibase
 
 1.1-1	2007-09-07
      o	allow the use of iplots within the R GUI on Mac OS X, but show a
