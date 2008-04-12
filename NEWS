@@ -1,7 +1,7 @@
  NEWS/ChangeLog for iPlots package
 ===================================
 
-1.1-2	(under development)
+1.1-2	(2008-04-12)
      o	add iplot.size() to get/set the size of a plot
      o  added Swing menu to ibase
 
