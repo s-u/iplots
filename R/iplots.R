@@ -1,9 +1,9 @@
 #==========================================================================
 # iplots - interactive plots for R
-# Package version: 1.1-2
+# Package version: 1.1-3
 #
 # $Id$
-# (C)Copyright 2003-7 Simon Urbanek, 2006 Tobias Wichtrey
+# (C)Copyright 2003-8 Simon Urbanek, 2006 Tobias Wichtrey
 # Authors: Simon Urbanek, Tobias Wichtrey, Alex Gouberman
 #
 # This copy of iplots is licensed under GPL v2.
@@ -105,7 +105,7 @@ setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", 
   ipe$.iplot.curid<-1
   ipe$.iplot.current<-NULL
 
-  if (.inside.make.check() || .restricted.el || nchar(Sys.getenv("NOAWT"))) .jcall(.iplots.fw,, "setNoInteractionFlag", TRUE)
+  if (!is.jnull(.iplots.fw) && (.inside.make.check() || .restricted.el || nchar(Sys.getenv("NOAWT")))) .jcall(.iplots.fw,, "setNoInteractionFlag", TRUE)
 }
 
 # helper function to identify a class in a strstr manner (not nice)
@@ -732,17 +732,22 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
   if (is.null(vars)) stop("Missing data")
 
   len<-length(vars)
+  if (inherits(vars, "iset")) {
+    v <- list()
+    for (i in 1:len) v[[i]] <- vars[[i]]
+    vars <- v
+  }
   vv <- vector()
-  if (inherits(vars,"ivar"))
+  if (inherits(vars, "ivar"))
     vv <- vars@vid
   else {
     if (is.list(vars) && length(vars)>1) {
       if (length(vars)!=length(names(vars)))
         names(vars) <- rep("V",length(vars))
       for (v in 1:length(vars))
-        vv[v] <-ivar.new(names(vars)[v], vars[[v]])@vid
+        vv[v] <- if (inherits(vars[[v]], "ivar")) vars[[v]]@vid else ivar.new(names(vars)[v], vars[[v]])@vid
     } else {
-      vv <- ivar.new(deparse(substitute(vars)), vars)@vid
+      vv <- if (inherits(vars[[1]], "ivar")) vars[[1]]@vid else ivar.new(deparse(substitute(vars)), vars)@vid
     }
   }
   if (!length(vv)) stop("Missing data")
@@ -845,18 +850,25 @@ ihist <- function(var, ...) {
 }
 
 ibox <- function(x, y=NULL, ...) {
+  if (inherits(x, "iset")) {
+    l <- list() # we cannot use lapply because it's not a generic
+    for (i in 1:length(x)) l[[i]] <- x[[i]]
+    x <- i
+  }
   if(is.list(x)) {
     vv<-vector()
     i <- 1
     for (var in x) {
       if (length(var) > 1) {
-        if (is.factor(var))
-          var <- as.integer(var)
-        varname <- names(x)[[i]]
-        if (!is.null(varname))
-  	  var <- ivar.new(varname, var)
-  	else
- 	  var <- ivar.new("V", var)
+        if (!inherits(var,"ivar")) {
+	  if (is.factor(var))
+            var <- as.integer(var)
+          varname <- names(x)[[i]]
+          if (!is.null(varname))
+  	    var <- ivar.new(varname, var)
+  	  else
+ 	    var <- ivar.new("V", var)
+        }
         if (inherits(var,"ivar"))  vv <- c(vv,var@vid)
       }
       i <- i+1
@@ -868,8 +880,8 @@ ibox <- function(x, y=NULL, ...) {
     if (inherits(x,"ivar")) len<-.jcall(x@obj,"I","size")
     if (len<2)
       stop("ibox requires at least two data points")
-    x<-ivar.new(deparse(substitute(x))[1], x);
-    if (!is.null(y))
+    if (!inherits(x,"ivar")) x<-ivar.new(deparse(substitute(x))[1], x);
+    if (!is.null(y) && !inherits(y, "ivar"))
       y <- ivar.new(deparse(substitute(y))[1], as.factor(y));
     .iplot.iBox(x, y, ...)
   }
