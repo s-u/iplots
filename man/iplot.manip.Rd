@@ -44,8 +44,8 @@ iplot.zoomIn(x1, y1, x2, y2)
 iplot.zoomOut(x, y)
 iplot.location(x, y, relative=FALSE, plot=iplot.cur())
 iplot.size(width, height, plot=iplot.cur())
-print.iobj(x, ...) 
-print.iplot(x, ...) 
+\method{print}{iobj}(x, \dots) 
+\method{print}{iplot}(x, \dots) 
 }
 \arguments{
   \item{i}{rotation orientation}
