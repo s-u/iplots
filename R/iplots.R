@@ -1,9 +1,9 @@
 #==========================================================================
 # iplots - interactive plots for R
-# Package version: 1.1-3
+# Package version: 1.1-4
 #
 # $Id$
-# (C)Copyright 2003-8 Simon Urbanek, 2006 Tobias Wichtrey
+# (C)Copyright 2003-11 Simon Urbanek, 2006 Tobias Wichtrey
 # Authors: Simon Urbanek, Tobias Wichtrey, Alex Gouberman
 #
 # This copy of iplots is licensed under GPL v2.
@@ -15,6 +15,7 @@
 #
 #==========================================================================
 # -- global variables (in the package environment)
+#    (note: since 1.1-4 we hold them above imports in an unlocked env)
 # .iplots.fw     - framework object
 # .iplots        - list of iplot objects
 # .iplot.curid   - current plot ID
@@ -49,13 +50,10 @@
 setClass("iset", representation(obj="jobjRef", name="character"))
 setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", iset="iset"))
 
-.restricted.el <- FALSE # restricted event loop use (on OS X in the GUI and shell)
-
 # library initialization: Add "<iplots>/java/iplots.jar" to classpath,
 # initialize Java and create an instance on the Framework "glue" class
-.First.lib <- function(lib, pkg) {
-  require(rJava)
-  .jpackage("iplots")
+.onLoad <- function(lib, pkg) {
+  .jpackage(pkg, lib.loc = lib)
 
   ## variables from iplots 0.x-x
   ipv <- c(".iplots",".iplots.fw",".iset.selection",".isets",".iplot.curid",".iplot.current")
@@ -65,7 +63,15 @@ setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", 
     warning("iPlots currently don't support saving of sessions. Data belonging to iPlots from your previous session will be discarded.")
   }
 
-  ipe <- as.environment(match("package:iplots", search()))
+  ## insert an environment above imports that will hold variables we can modify
+  ## this allows pre-namespace semantics under namespaces
+  .imports <- parent.env(topenv())
+  .i.par <- parent.env(.imports)
+  ipe <- new.env(parent=.i.par)
+  attr(ipe, "name") <- "volatiles:iplots"
+  parent.env(.imports) <- ipe
+
+  ipe$.restricted.el <- FALSE # restricted event loop use (on OS X in the GUI and shell)
 
   # disable compatibility mode on Macs (experimental!)
   if (length(grep("^darwin",R.version$os))) {
