@@ -1,7 +1,7 @@
  NEWS/ChangeLog for iPlots package
 ===================================
 
-1.1-4	(under development)
+1.1-4	2011-07-18
      o	add a NAMESPACE since it becomes compulsory in new R versions
 	and we need to work around locked namespace environments
 
