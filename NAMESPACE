@@ -1,2 +1,2 @@
 exportPattern("^[^\\.]")
-import(rJava, .jarray, .jcall, .jcast, .jclass, .jnew, .jnull, .jpackage, .jstrVal)
+importFrom(rJava, .jarray, .jcall, .jcast, .jclass, .jnew, .jnull, .jpackage, .jstrVal)
