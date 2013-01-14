@@ -1,6 +1,6 @@
 #==========================================================================
 # iplots - interactive plots for R
-# Package version: 1.1-4
+# Package version: 1.1-5
 #
 # $Id$
 # (C)Copyright 2003-11 Simon Urbanek, 2006 Tobias Wichtrey
@@ -1179,12 +1179,12 @@ iobj.rm <- function(which=iobj.cur(), plot = iplot.cur()) {
   if (!is.null(x) || !is.null(y)) {
     if (is.null(x)) x<-.jcall(o$obj,"[D","getX",evalArray=TRUE)
     if (is.null(y)) y<-.jcall(o$obj,"[D","getY",evalArray=TRUE)
-    .jcall(o$obj,"V","set",as.real(x),as.real(y))
+    .jcall(o$obj,"V","set",as.double(x),as.double(y))
   }
   if (!is.null(ax))
-    .jcall(o$obj,"V","setAX",as.real(ax))
+    .jcall(o$obj,"V","setAX",as.double(ax))
   if (!is.null(ay))
-    .jcall(o$obj,"V","setAY",as.real(ay))
+    .jcall(o$obj,"V","setAY",as.double(ay))
   if (!is.null(txt)) {
     .jcall(o$obj,"V","set",as.character(txt))
   }
