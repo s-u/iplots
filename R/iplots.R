@@ -83,7 +83,7 @@ setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", 
           if (!nchar(Sys.getenv("R_GUI_APP_VERSION"))) {
               # fire up event loop by simply starting a Quartz device
               grDevices::quartz("dummy", 2, 2)
-              dev.off()
+              grDevices::dev.off()
               # improve response time
               # would need QuartzCocoa_SetLatency(10) call
           } else {

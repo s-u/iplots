@@ -5,6 +5,7 @@ Author: Simon Urbanek <simon.urbanek@r-project.org>, Tobias Wichtrey <tobias@tar
 Maintainer: Simon Urbanek <simon.urbanek@r-project.org>
 Depends: R (>= 1.5.0), methods, rJava (>= 0.5-0)
 Suggests: maps, MASS
-License: GPL version 2
+Imports: grDevices
+License: GPL-2
 Description: Interactive plots for R
 URL: http://www.iPlots.org/
