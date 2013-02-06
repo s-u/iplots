@@ -46,10 +46,11 @@ rm -rf `find . -name CVS -or -name .svn -or -name \*~ -or -name .#\*`
 
 echo "Updating version ..."
 cat DESCRIPTION| sed "s/Version:.*/Version: ${VER}/" > d && mv d DESCRIPTION
+rm -f `find . -name ._\*`
 
 echo "Creating package ..."
 cd ..
-tar fcz ${PNAME}_${VER}.tar.gz ${PNAME}
+R CMD build ${PNAME}
 cd ${SWD}
 cp /tmp/${PNAME}_${VER}.tar.gz ..
 rm -rf /tmp/${PNAME}

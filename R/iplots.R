@@ -81,9 +81,11 @@ setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", 
           #.jcall("java/lang/System","S","setProperty","com.apple.eawt.CocoaComponent.CompatibilityMode","false")
           .restricted.el <<- TRUE
           if (!nchar(Sys.getenv("R_GUI_APP_VERSION"))) {
-              library(CarbonEL)
+              # fire up event loop by simply starting a Quartz device
+              grDevices::quartz("dummy", 2, 2)
+              dev.off()
               # improve response time
-              .cel.set.sleep(0.01)
+              # would need QuartzCocoa_SetLatency(10) call
           } else {
               ## disable all handlers as they conflict with the GUI
               .jcall("java/lang/System","S","setProperty","register.about","false")
@@ -91,7 +93,7 @@ setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", 
               .jcall("java/lang/System","S","setProperty","register.preferences","false")
               .jcall("java/lang/System","S","setProperty","register.quit","false")
           }
-          cat("Note: On Mac OS X we strongly recommend using iplots from within JGR.\nProceed at your own risk as iplots cannot resolve potential ev.loop deadlocks.\n'Yes' is assumed for all dialogs as they cannot be shown without a deadlock,\nalso ievent.wait() is disabled.\n")
+          packageStartupMessage("Note: On Mac OS X we strongly recommend using iplots from within JGR.\nProceed at your own risk as iplots cannot resolve potential ev.loop deadlocks.\n'Yes' is assumed for all dialogs as they cannot be shown without a deadlock,\nalso ievent.wait() is disabled.\nMore recent OS X version do not allow signle-threaded GUIs and will fail.\n")
       } else {
           # don't mess JGR up
           .jcall("java/lang/System","S","setProperty","register.about","false")

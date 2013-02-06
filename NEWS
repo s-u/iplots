@@ -1,6 +1,9 @@
  NEWS/ChangeLog for iPlots package
 ===================================
 
+1.1-5	2012-02-06
+     o	remove dependency on CarbonEL
+
 1.1-4	2011-07-18
      o	add a NAMESPACE since it becomes compulsory in new R versions
 	and we need to work around locked namespace environments
