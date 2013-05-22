@@ -1,9 +1,9 @@
 #==========================================================================
 # iplots - interactive plots for R
-# Package version: 1.1-5
+# Package version: 1.1-6
 #
 # $Id$
-# (C)Copyright 2003-11 Simon Urbanek, 2006 Tobias Wichtrey
+# (C)Copyright 2003-13 Simon Urbanek, 2006 Tobias Wichtrey
 # Authors: Simon Urbanek, Tobias Wichtrey, Alex Gouberman
 #
 # This copy of iplots is licensed under GPL v2.
@@ -1203,6 +1203,59 @@ itext <- function(x, y=NULL, labels=seq(along=x), ax=NULL, ay=NULL, ..., plot=ip
   pt
 }
 
+.raw.read <- function(con) {
+  x <- 20e6
+  y <- raw()
+  while(TRUE) {
+    z <- readBin(con, raw(), x)
+    if (length(y)) {
+      if (length(z) < x)
+        return(c(y, z))
+      y <- c(y, z)
+    } else {
+      if (length(z) < x)
+        return(z)
+      y <- z
+    }
+  }
+}
+
+iraster <- function(x1, y1, x2, y2, img, ..., plot=iplot.cur()) {
+  if (inherits(img, "raster") || inherits(img, "nativeRaster") || is.matrix(img) || is.array(img)) img <- writePNG(img)
+  else if (inherits(img, "connection")) img <- .raw.read(img)
+  else if (!is.raw(img)) {
+    img <- as.character(img)[1L]
+    sz <- file.info(img)$size
+    if (any(is.na(sz))) stop("cannot read file `", img, "'")
+    img <- readBin(img, raw(), sz)
+  }
+  plot <- .get.plot.obj(plot)
+  if (length(x1) == 4L && missing(y1)) {
+    y1 <- x1[2L]
+    x2 <- x1[3L]
+    y2 <- x1[4L]
+    x1 <- x1[1L]
+  } else if (length(x1) == 2L && missing(y1) && !missing(x2) && length(x2) == 2L) {
+    y1 <- x1[2L]
+    x1 <- x1[1L]
+    y2 <- x2[2L]
+    x2 <- x2[1L]
+  }
+  if (length(x1) != 1L || length(x2) != 1L || length(y1) != 1L || length(y2) != 1L)
+    stop("Invalid image coordinates")
+  
+  pt <- .iobj.new(plot, "PlotImage")
+  .jcall(pt$obj, "V", "set", as.double(x1), as.double(y1), as.double(x2), as.double(y2))
+  .jcall(pt$obj, "V", "setImage", img)
+  if (length(list(...)))
+    .iobj.opt(pt, ...)
+  else {
+    .jcall(plot$obj, "V","forcedFlush")
+    .jcall(plot$obj, "V","repaint")
+  }
+  pt
+}
+
 .iobj.opt.get.PlotText <- function(o)
   list(x=.jcall(o$obj,"[D","getX",evalArray=TRUE),
        y=.jcall(o$obj,"[D","getY",evalArray=TRUE),
@@ -1263,6 +1316,8 @@ iobj.opt <- function(o=iobj.cur(),...) {
     .jcall(o$obj,"V","update")
     # dirty temporary fix
     .jcall(.iplot.current$obj,"V","forcedFlush")
+    if (.class.strstr(o$obj, "PlotImage")) ## not sure why, but PlotImage requires explicit repaint
+      .jcall(o$plot$obj, "V", "repaint")
   }
 }
 
