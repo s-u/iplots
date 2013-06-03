@@ -16,13 +16,10 @@ iraster(x1, y1, x2, y2, img, ..., plot = iplot.cur())
   top-right (x2, y2) corner. Alternatively, \code{x1} can be a vector of
   length 4 specifying the four values, or \code{x1} and \code{x2} can be
   vectors of length 2 specifying one point each}
-\item{raster}{raster object to draw. Note that the current
-  implementation simply calls \code{\link{writePNG}} on this object, so see
-  the corresponding documentation for details}
 \item{img}{image to draw. It can be either a raster, file name, binary
   connection or a raw vector containing an image in a common image
   format such as PNG or JPEG. If it is a raster, then the raster is first
-  encoded into PNG format as passed as raw vector.}
+  encoded into PNG format and passed as raw vector.}
 \item{...}{additional arguments that will be passed to
   \code{\link{iobj.opt}} if present.}
 \item{plot}{parent plot for the image}
