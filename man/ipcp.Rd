@@ -6,9 +6,6 @@
 \description{
   This function creates a new interactive parallel coordinates plot from the given data.
 }
-\synopsis{
-ipcp(...)
-}
 \usage{
 ipcp(vars, ...)
 }
@@ -25,6 +22,11 @@ ipcp(vars, ...)
 \details{
   Creates an interactive parallel coordinates plot.
 
+  The plot can be used either in the form \code{ipcp(df)} to plot
+  a list or data frame of variables contained in \code{df} or
+  \code{ipcp(x, y, z)} to plot variables \code{x}, \code{y} and
+  \code{z}.
+  
   Additional parameters:
   \describe{
     \item{\code{alterningLabels}}{Whether lables should be placed alternately at the top and at the bottom.}

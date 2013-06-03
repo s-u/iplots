@@ -6,13 +6,8 @@
 \description{
   This function adds one straight line through the current iPlot.
 }
-\synopsis{
-iabline(a = NULL, b = NULL, reg = NULL, coef = NULL, ..., plot = iplot.cur())
-}
 \usage{
-iabline(a, b, ...)
-iabline(coef=, ...)
-iabline(reg=, ...)
+iabline(a = NULL, b = NULL, reg = NULL, coef = NULL, ..., plot = iplot.cur())
 }
 \arguments{
   \item{a, b}{the intercept and slope}
@@ -23,8 +18,14 @@ iabline(reg=, ...)
 \value{
   Resulting iObject.
 }
+\details{
+  Typical usates are
+  \preformatted{  iabline(a, b, ...)
+  iabline(coef=, ...)
+  iabline(reg=, ...)
+}
+}
 \seealso{
   \code{\link{ilines}}, \code{\link{iobj.opt}}
 }
 \keyword{hplot}
-

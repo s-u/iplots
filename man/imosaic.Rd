@@ -6,9 +6,6 @@
 \description{
   This function creates a new interactive mosaic plot from the given data.
 }
-\synopsis{
-imosaic(...)
-}
 \usage{
 imosaic(vars, ..., type="observed")
 }
@@ -27,6 +24,11 @@ variables to display.
   Resulting plot object.
 }
 \details{
+  The plot can be used either in the form \code{imosaic(df)} to plot
+  a list or data frame of variables contained in \code{df} or
+  \code{imosaic(x, y, z)} to plot variables \code{x}, \code{y} and
+  \code{z}.
+
   Additional parameters:
   \describe{
     \item{rotateYLabelsBy}{The default value of this variable is changed
