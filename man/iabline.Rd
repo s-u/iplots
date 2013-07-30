@@ -14,12 +14,13 @@ iabline(a = NULL, b = NULL, reg = NULL, coef = NULL, ..., plot = iplot.cur())
   \item{coef}{a vector of length two giving the intercept and slope}
   \item{reg}{an object with a \code{coef} component}
   \item{...}{object options for \code{\link{iobj.opt}}}
+  \item{plot}{plot to which this line is to be added}
 }
 \value{
   Resulting iObject.
 }
 \details{
-  Typical usates are
+  Typical usages are
   \preformatted{  iabline(a, b, ...)
   iabline(coef=, ...)
   iabline(reg=, ...)

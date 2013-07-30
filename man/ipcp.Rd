@@ -10,10 +10,9 @@
 ipcp(vars, ...)
 }
 \arguments{
-  \item{vars}{list of at least two variables}
-  \item{...}{All additional parameters are passed to
-    \code{\link{iplot.opt}}. All unnamed parameters are treated as
-    variables to plot.
+  \item{...}{All unnamed parameters are treated as variables to
+    display. All additional parameters are passed to
+    \code{\link{iplot.opt}}.
   }
 }
 \value{

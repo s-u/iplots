@@ -10,14 +10,11 @@
   concept which makes it very easy to implement new interactive plots.
 }
 \usage{
-  ihammock(vars, ...)
+  ihammock(...)
 }
 \arguments{
-  \item{vars}{list of factors to display or the first variable if
-    multiple variables are passed as arguments}
-  \item{...}{All additional parameters are passed to
-    \code{\link{iplot.opt}}. All unnamed parameters are assumed to be
-    data to plot.
+  \item{...}{All unnamed parameters are treated as variables to
+    display. All additional parameters are passed to \code{\link{iplot.opt}}.
   }
 }
 \details{

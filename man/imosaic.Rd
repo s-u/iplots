@@ -7,13 +7,11 @@
   This function creates a new interactive mosaic plot from the given data.
 }
 \usage{
-imosaic(vars, ..., type="observed")
+imosaic(..., type="observed")
 }
 \arguments{
-  \item{vars}{list of variables/factors or a single variable/factor}
-  \item{...}{All additional parameters are passed to
-    \code{\link{iplot.opt}}. All unnamed parameters are treated as
-variables to display. 
+  \item{...}{All unnamed parameters are treated as variables to
+    display. Additional parameters are passed to \code{\link{iplot.opt}}. 
   }
   \item{type}{selects the variation of the mosaic plot. Valid values are
     "observed", "expected", "fluctuation", "same.bin.size" and
