@@ -7,16 +7,16 @@
   This function creates a new interactive mosaic plot from the given data.
 }
 \usage{
-imosaic(..., type="observed")
+imosaic(...)
 }
 \arguments{
   \item{...}{All unnamed parameters are treated as variables to
-    display. Additional parameters are passed to \code{\link{iplot.opt}}. 
-  }
-  \item{type}{selects the variation of the mosaic plot. Valid values are
-    "observed", "expected", "fluctuation", "same.bin.size" and
-    "multiple.barchart". Partial matching is used, so first letter is
-    sufficient.}
+    display. Additional parameters are passed to
+    \code{\link{iplot.opt}}.
+    The parameter \code{"type"} selects the variation of the mosaic
+    plot. Valid values are "observed", "expected", "fluctuation",
+    "same.bin.size" and "multiple.barchart". Partial matching is used,
+    so first letter is sufficient.}
 }
 \value{
   Resulting plot object.

@@ -50,6 +50,10 @@
 setClass("iset", representation(obj="jobjRef", name="character"))
 setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", iset="iset"))
 
+.onAttach <- function(...) {
+  if (length(.issue.warning)) packageStartupMessage(.issue.warning)
+}
+
 # library initialization: Add "<iplots>/java/iplots.jar" to classpath,
 # initialize Java and create an instance on the Framework "glue" class
 .onLoad <- function(lib, pkg) {
@@ -72,7 +76,8 @@ setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", 
   parent.env(.imports) <- ipe
 
   ipe$.restricted.el <- FALSE # restricted event loop use (on OS X in the GUI and shell)
-
+  ipe$.issue.warning <- NULL
+  
   # disable compatibility mode on Macs (experimental!)
   if (length(grep("^darwin",R.version$os))) {
       # this is a JGR 1.5 hack - it allows us to find out whether we are running
@@ -93,7 +98,7 @@ setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", 
               .jcall("java/lang/System","S","setProperty","register.preferences","false")
               .jcall("java/lang/System","S","setProperty","register.quit","false")
           }
-          packageStartupMessage("Note: On Mac OS X we strongly recommend using iplots from within JGR.\nProceed at your own risk as iplots cannot resolve potential ev.loop deadlocks.\n'Yes' is assumed for all dialogs as they cannot be shown without a deadlock,\nalso ievent.wait() is disabled.\nMore recent OS X version do not allow signle-threaded GUIs and will fail.\n")
+          ipe$.issue.warning <- "Note: On Mac OS X we strongly recommend using iplots from within JGR.\nProceed at your own risk as iplots cannot resolve potential ev.loop deadlocks.\n'Yes' is assumed for all dialogs as they cannot be shown without a deadlock,\nalso ievent.wait() is disabled.\nMore recent OS X version do not allow signle-threaded GUIs and will fail.\n"
       } else {
           # don't mess JGR up
           .jcall("java/lang/System","S","setProperty","register.about","false")

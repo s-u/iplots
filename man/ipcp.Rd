@@ -7,7 +7,7 @@
   This function creates a new interactive parallel coordinates plot from the given data.
 }
 \usage{
-ipcp(vars, ...)
+ipcp(...)
 }
 \arguments{
   \item{...}{All unnamed parameters are treated as variables to
