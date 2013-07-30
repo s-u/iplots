@@ -1,13 +1,17 @@
  NEWS/ChangeLog for iPlots package
 ===================================
 
-1.1-6	(under development)
+1.1-6	2013-06-30
      o	add basic support for bitmap images -- see iraster()
 
      o	add a virtual layer -2 that is part of the actual layer 0 and
 	drawn after paintBack but before paintObjects. It can be only
 	used by iObjs and allows those to be plotted after axes but
 	before plot primitives (useful for background raster images)
+
+     o	update documentation to adhere to more restrictive rules in
+	current R that prevent proper documentation of structured
+	dots arguments.
 
 
 1.1-5	2012-02-06
