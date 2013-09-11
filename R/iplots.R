@@ -1,6 +1,6 @@
 #==========================================================================
 # iplots - interactive plots for R
-# Package version: 1.1-6
+# Package version: 1.1-7
 #
 # $Id$
 # (C)Copyright 2003-13 Simon Urbanek, 2006 Tobias Wichtrey
@@ -639,17 +639,12 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
 }
 
 .iplot.iBox <- function (x, y, ...) {
- if(!inherits(x,"ivar")){
-   vv<-vector()
-    for (v in x) {
-      if (inherits(v, "ivar"))
-        vv<-c(vv,v@vid)
-      else
-        vv<-c(vv,v)
-    }
-    a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",as.integer(vv)),"iboxplot")
-  }
-  else {
+ if (!inherits(x,"ivar")) {
+   vv <- integer(length(x))
+   for (i in seq.int(length(x)))
+     vv[i] <- if (inherits(v, "ivar")) v@vid else v
+    a <- .iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",as.integer(vv)),"iboxplot")
+  } else {
     if (is.null(y)) a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",x@vid),"iboxplot")
     else a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",x@vid,y@vid),"iboxplot")
   }
@@ -688,16 +683,9 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
 }
 
 .iplot.iMosaic <- function (vars, ...) {
-  vv<-vector()
-  for (v in vars) {
-    if (inherits(v, "ivar"))
-      vv<-c(vv,v@vid)
-    else
-      vv<-c(vv,v)
-  }
-  if (length(vv)<2)
+  if (length(vars) < 2L)
     stop("At least 2 valid variables are necessary for a mosaic plot")
-  a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/MosaicCanvas;","newMosaic",as.integer(vv)),"imosaic")
+  a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/MosaicCanvas;","newMosaic",as.integer(vars)),"imosaic")
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
 }
@@ -711,7 +699,7 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
 #  * list passed as "vars" argument
 # they are converted from their raw form to var IDs pushing them to iset
 # if necessary
-.var.list <- function (...) {
+.var.list <- function (..., .apply.coresion.fn) {
   l <- list(...)
   vars <- NULL
   opts <- l
@@ -723,19 +711,19 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
     if (length(vars)==1 && is.list(vars))
       vars <- vars[[1]]
     opts <- NULL
-  } else if (sum(names(l)=="")) {
+  } else if (any(names(l)=="")) {
     vars <- l
     sl <- substitute(list(...))
     sl[[1]] <- NULL
-    sl[names(l)!=""] <- NULL
-    vars[names(l)!=""] <- NULL
-    opts[names(opts)==""] <- NULL
-    if (length(vars)==1 && is.list(vars[[1]]))
+    sl[names(l) != ""] <- NULL
+    vars[names(l) != ""] <- NULL
+    opts[names(opts) == ""] <- NULL
+    if (length(vars) == 1L && is.list(vars[[1]]))
       vars <- vars[[1]]
     else
-      names(vars) <- unlist(lapply(sl,deparse))
+      names(vars) <- unlist(lapply(sl, deparse))
   } else {
-    m <- pmatch(names(l),"vars")
+    m <- pmatch(names(l), "vars")
     if (!is.na(m)) {
       vars <- l[[which(m==1)]]
       opts[[which(m==1)]] <- NULL
@@ -744,24 +732,18 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
   
   if (is.null(vars)) stop("Missing data")
 
-  len<-length(vars)
-  if (inherits(vars, "iset")) {
-    v <- list()
-    for (i in 1:len) v[[i]] <- vars[[i]]
-    vars <- v
-  }
-  vv <- vector()
+  len <- length(vars)
+  if (inherits(vars, "iset"))
+    vars <- lapply(seq.int(len), function(i) vars[[i]])
   if (inherits(vars, "ivar"))
     vv <- vars@vid
   else {
-    if (is.list(vars) && length(vars)>1) {
-      if (length(vars)!=length(names(vars)))
-        names(vars) <- rep("V",length(vars))
-      for (v in 1:length(vars))
-        vv[v] <- if (inherits(vars[[v]], "ivar")) vars[[v]]@vid else ivar.new(names(vars)[v], vars[[v]])@vid
-    } else {
-      vv <- if (inherits(vars[[1]], "ivar")) vars[[1]]@vid else ivar.new(deparse(substitute(vars)), vars)@vid
-    }
+    if (!is.list(vars)) vars <- list(V=vars)
+    vv <- integer(length(vars))
+    if (length(vars) != length(names(vars)))
+      names(vars) <- rep("V",length(vars))
+    for (v in 1:length(vars))
+      vv[v] <- if (inherits(vars[[v]], "ivar")) vars[[v]]@vid else ivar.new(names(vars)[v], if (missing(.apply.coresion.fn)) vars[[v]] else .apply.coresion.fn(vars[[v]]))@vid
   }
   if (!length(vv)) stop("Missing data")
   #do.call(".iplot.iMosaic",c(list(vars=vv), opts))
@@ -774,7 +756,7 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
 
 
 imosaic <- function(...) {
-  l <- .var.list(...)
+  l <- .var.list(..., .apply.coresion.fn=as.factor)
   do.call(".iplot.iMosaic",c(list(vars=l$vars), l$opts))
 }
 
@@ -863,46 +845,41 @@ ihist <- function(var, ...) {
 }
 
 ibox <- function(x, y=NULL, ...) {
-  if (inherits(x, "iset")) {
-    l <- list() # we cannot use lapply because it's not a generic
-    for (i in 1:length(x)) l[[i]] <- x[[i]]
-    x <- i
-  }
-  if(is.list(x)) {
-    vv<-vector()
-    i <- 1
-    for (var in x) {
+  if (inherits(x, "iset"))
+    x <- lapply(seq.int(length(x)), function(i) x[[i]])
+  if (!is.null(y) && !inherits(y, "ivar"))
+    y <- ivar.new(deparse(substitute(y))[1], as.factor(y));
+  if (is.list(x)) {
+    vv <- integer()
+    for (i in seq.int(length(x))) {
+      var <- x[[i]]
       if (length(var) > 1) {
-        if (!inherits(var,"ivar")) {
-	  if (is.factor(var))
-            var <- as.integer(var)
+        if (!inherits(var, "ivar")) {
+	  if (!is.numeric(var))
+            var <- as.numeric(var)
           varname <- names(x)[[i]]
           if (!is.null(varname))
   	    var <- ivar.new(varname, var)
   	  else
  	    var <- ivar.new("V", var)
         }
-        if (inherits(var,"ivar"))  vv <- c(vv,var@vid)
+        if (inherits(var,"ivar")) vv <- c(vv, var@vid)
       }
-      i <- i+1
     }
     .iplot.iBox(vv,y, ...)
-  }
-  else {
-    len<-length(x)
-    if (inherits(x,"ivar")) len<-.jcall(x@obj,"I","size")
-    if (len<2)
+  } else {
+    len <- length(x)
+    if (inherits(x,"ivar")) len<-.jcall(x@obj,"I","size") else if (!is.numeric(x)) x <- as.numeric(x)
+    if (len < 2L)
       stop("ibox requires at least two data points")
     if (!inherits(x,"ivar")) x<-ivar.new(deparse(substitute(x))[1], x);
-    if (!is.null(y) && !inherits(y, "ivar"))
-      y <- ivar.new(deparse(substitute(y))[1], as.factor(y));
     .iplot.iBox(x, y, ...)
   }
 }
 
 ihammock <- function(...) {
   l <- .var.list(...)
-  if (length(l$vars)<2) stop("At least two variables are required for PCP")
+  if (length(l$vars) < 2) stop("At least two variables are required for hammock plots")
   do.call(".iplot.iHammock",c(list(vars=l$vars), l$opts))
 }
 
