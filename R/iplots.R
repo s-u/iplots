@@ -639,14 +639,22 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
 }
 
 .iplot.iBox <- function (x, y, ...) {
- if (!inherits(x,"ivar")) {
-   vv <- integer(length(x))
-   for (i in seq.int(length(x)))
-     vv[i] <- if (inherits(v, "ivar")) v@vid else v
-    a <- .iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",as.integer(vv)),"iboxplot")
+  if (!inherits(x,"ivar")) {
+    vv <- integer(length(x))
+    for (i in seq.int(length(x))) {
+      v <- x[[i]]
+      vv[i] <- if (inherits(v, "ivar")) v@vid else v
+    }
+    if (length(x) == 1L && !is.null(y))
+      a <- .iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot", as.integer(vv), y@vid), "iboxplot")
+    else if (is.null(y))
+      a <- .iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",as.integer(vv)),"iboxplot")
+    else stop("Cannot have multivariate `x' and a grouping variable")
   } else {
-    if (is.null(y)) a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",x@vid),"iboxplot")
-    else a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",x@vid,y@vid),"iboxplot")
+    if (is.null(y))
+      a <- .iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",x@vid),"iboxplot")
+    else
+      a<-.iplot.new(lastPlot<-.jcall(.iplots.fw,"Lorg/rosuda/ibase/plots/ParallelAxesCanvas;","newBoxplot",x@vid,y@vid),"iboxplot")
   }
   if (length(list(...))>0) iplot.opt(...,plot=a)
   a
@@ -699,7 +707,7 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
 #  * list passed as "vars" argument
 # they are converted from their raw form to var IDs pushing them to iset
 # if necessary
-.var.list <- function (..., .apply.coresion.fn) {
+.var.list <- function (..., .apply.coersion.fn) {
   l <- list(...)
   vars <- NULL
   opts <- l
@@ -743,7 +751,7 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
     if (length(vars) != length(names(vars)))
       names(vars) <- rep("V",length(vars))
     for (v in 1:length(vars))
-      vv[v] <- if (inherits(vars[[v]], "ivar")) vars[[v]]@vid else ivar.new(names(vars)[v], if (missing(.apply.coresion.fn)) vars[[v]] else .apply.coresion.fn(vars[[v]]))@vid
+      vv[v] <- if (inherits(vars[[v]], "ivar")) vars[[v]]@vid else ivar.new(names(vars)[v], if (missing(.apply.coersion.fn)) vars[[v]] else .apply.coersion.fn(vars[[v]]))@vid
   }
   if (!length(vv)) stop("Missing data")
   #do.call(".iplot.iMosaic",c(list(vars=vv), opts))
@@ -756,7 +764,7 @@ print.iplot <- function(x, ...) { cat("ID:",x$id," Name: \"",attr(x,"iname"),"\"
 
 
 imosaic <- function(...) {
-  l <- .var.list(..., .apply.coresion.fn=as.factor)
+  l <- .var.list(..., .apply.coersion.fn=as.factor)
   do.call(".iplot.iMosaic",c(list(vars=l$vars), l$opts))
 }
 
@@ -853,18 +861,16 @@ ibox <- function(x, y=NULL, ...) {
     vv <- integer()
     for (i in seq.int(length(x))) {
       var <- x[[i]]
-      if (length(var) > 1) {
-        if (!inherits(var, "ivar")) {
-	  if (!is.numeric(var))
-            var <- as.numeric(var)
-          varname <- names(x)[[i]]
-          if (!is.null(varname))
-  	    var <- ivar.new(varname, var)
-  	  else
- 	    var <- ivar.new("V", var)
-        }
-        if (inherits(var,"ivar")) vv <- c(vv, var@vid)
+      if (!inherits(var, "ivar")) {
+        if (!is.numeric(var))
+          var <- as.numeric(var)
+        varname <- names(x)[[i]]
+        if (!is.null(varname))
+          var <- ivar.new(varname, var)
+        else
+          var <- ivar.new("V", var)
       }
+      if (inherits(var, "ivar")) vv <- c(vv, var@vid)
     }
     .iplot.iBox(vv,y, ...)
   } else {
@@ -878,7 +884,7 @@ ibox <- function(x, y=NULL, ...) {
 }
 
 ihammock <- function(...) {
-  l <- .var.list(...)
+  l <- .var.list(..., .apply.coersion.fn=as.factor)
   if (length(l$vars) < 2) stop("At least two variables are required for hammock plots")
   do.call(".iplot.iHammock",c(list(vars=l$vars), l$opts))
 }

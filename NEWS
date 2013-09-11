@@ -1,6 +1,18 @@
  NEWS/ChangeLog for iPlots package
 ===================================
 
+1.1-7	(under development)
+     o	fixed ibox() to work on integer vectors properly
+
+     o	fixed issues with NA handling for integer and numeric vectors
+	when computing ranks. This restores the ability to use ibox()
+	on vectors containing NAs.
+
+     o	clean up of the handling of input variables to plot routines.
+	imosaic() and ihammock() now implicitly convert all inputs to
+	factors.
+
+
 1.1-6	2013-06-30
      o	add basic support for bitmap images -- see iraster()
 
