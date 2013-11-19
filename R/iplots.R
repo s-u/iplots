@@ -77,7 +77,8 @@ setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", 
 
   ipe$.restricted.el <- FALSE # restricted event loop use (on OS X in the GUI and shell)
   ipe$.issue.warning <- NULL
-  
+
+  headless <- identical(.jcall("java/lang/System","S","getProperty","java.awt.headless"), "true")
   # disable compatibility mode on Macs (experimental!)
   if (length(grep("^darwin",R.version$os))) {
       # this is a JGR 1.5 hack - it allows us to find out whether we are running
@@ -86,11 +87,14 @@ setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", 
           #.jcall("java/lang/System","S","setProperty","com.apple.eawt.CocoaComponent.CompatibilityMode","false")
           .restricted.el <<- TRUE
           if (!nchar(Sys.getenv("R_GUI_APP_VERSION"))) {
+            ## start Quartz only if we are not in headless mode
+            if (!headless) {
               # fire up event loop by simply starting a Quartz device
               grDevices::quartz("dummy", 2, 2)
               grDevices::dev.off()
               # improve response time
               # would need QuartzCocoa_SetLatency(10) call
+            }
           } else {
               ## disable all handlers as they conflict with the GUI
               .jcall("java/lang/System","S","setProperty","register.about","false")
@@ -108,8 +112,8 @@ setClass("ivar", representation(obj="jobjRef", vid="integer", name="character", 
       }
   }
   
-  assign(".iplots.fw", if (nchar(Sys.getenv("NOAWT"))) NULL else .jnew("org/rosuda/iplots/Framework"), ipe)
-
+  assign(".iplots.fw", if (headless || nchar(Sys.getenv("NOAWT"))) NULL else .jnew("org/rosuda/iplots/Framework"), ipe)
+  
    # we need to reset everything for sanity reasons
   assign(".iset.selection", vector(), ipe)
   assign(".isets", list(), ipe)
