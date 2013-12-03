@@ -1,7 +1,7 @@
  NEWS/ChangeLog for iPlots package
 ===================================
 
-1.1-7	(under development)
+1.1-7	2013-12-03
      o	fixed ibox() to work on integer vectors properly
 
      o	fixed issues with NA handling for integer and numeric vectors
@@ -11,6 +11,8 @@
      o	clean up of the handling of input variables to plot routines.
 	imosaic() and ihammock() now implicitly convert all inputs to
 	factors.
+
+     o	honor headless mode introduced in rJava 0.9-5
 
 
 1.1-6	2013-06-30
