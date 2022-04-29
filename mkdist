@@ -39,7 +39,7 @@ cp "${JARFILE}" inst/java
 make -C java/org clean
 # R check doesn't like our Java Makefile so move it aside
 mv java/org/Makefile java/org/java-makefile
-rm -f mkdist
+rm -f mkdist version
 
 echo "Removing CVS/SVN and backup stuff ..."
 rm -rf `find . -name CVS -or -name .svn -or -name \*~ -or -name .#\*`
