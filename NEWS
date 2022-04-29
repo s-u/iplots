@@ -1,6 +1,14 @@
  NEWS/ChangeLog for iPlots package
 ===================================
 
+1.1-8
+     o	fix warning due to length condition in iset.brush()
+
+
+1.1-7.1	2018-06-17
+     o	updated NAMESPACE (thanks to Kurt Hornik)
+
+
 1.1-7	2013-12-03
      o	fixed ibox() to work on integer vectors properly
 
