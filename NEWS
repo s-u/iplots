@@ -1,8 +1,11 @@
  NEWS/ChangeLog for iPlots package
 ===================================
 
-1.1-8
+1.1-8	2022-04-29
      o	fix warning due to length condition in iset.brush()
+
+     o	Java sources are now included in the package tar ball in
+	the java directory.
 
 
 1.1-7.1	2018-06-17

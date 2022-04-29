@@ -1,6 +1,6 @@
 Package: iplots
 Version: 1.1-7.1
-Title: iPlots - interactive graphics for R
+Title: iPlots - Interactive Graphics for R
 Author: Simon Urbanek <simon.urbanek@r-project.org>, Tobias Wichtrey <tobias@tarphos.de>
 Maintainer: Simon Urbanek <simon.urbanek@r-project.org>
 Depends: R (>= 1.5.0), methods, rJava (>= 0.5-0)
@@ -9,3 +9,4 @@ Imports: grDevices, png
 License: GPL-2
 Description: Interactive plots for R.
 URL: http://www.iPlots.org/
+BugReports: https://github.com/s-u/iplots/issues
