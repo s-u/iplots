@@ -1043,7 +1043,7 @@ iset.selectNone <- function(batch=FALSE) { .jcall(.jcall(.jcall(.iplots.fw,"Lorg
 # in paper: iset.color(color, what=iset.selected())
 iset.col <- function(col=NULL) { iset.brush(col) }
 iset.brush <- function(col=NULL) {
-  if (is.null(col) || is.na(col)) col<-as.integer(c(0,0))
+  if (is.null(col) || (length(col) > 0 && all(is.na(col)))) col<-as.integer(c(0,0))
   if (is.numeric(col) && !is.integer(col)) col<-as.integer(col)
   if (is.factor(col)) col<-as.integer(as.integer(col)+1)
   .jcall(.iplots.fw,"V","setSecMark",col);
